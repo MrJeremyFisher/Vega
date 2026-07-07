@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "ca.favro.vega.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "ConnectionMixin",
+    "ClientHandshakeMixin",
+    "ScreenshotMixin",
+    "TransientEntitySectionManagerMixin",
+    "TransientEntitySectionManagerMixin$ListenerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

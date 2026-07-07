@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "vega",
+  "version": "${version}",
+  "name": "Vega",
+  "description": "",
+  "authors": [
+    "MrJeremyFisher"
+  ],
+  "contact": {},
+  "license": "GPLv3",
+  "icon": "icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "ca.favro.vega.client.VegaFabric"
+    ]
+  },
+  "mixins": [
+    {
+      "config": "vega.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}

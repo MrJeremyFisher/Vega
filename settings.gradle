@@ -1,0 +1,18 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'ParchmentMC'
+            url = 'https://maven.parchmentmc.org'
+        }
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        gradlePluginPortal()
+    }
+}
+
+include 'client'
+include 'common'
+
+rootProject.name = "vega"
