@@ -9,6 +9,7 @@ import ca.favro.vega.common.integrations.combatradar.CombatRadarIntegration;
 import ca.favro.vega.common.integrations.voxelmap.VoxelmapIntegration;
 import ca.favro.vega.common.renderers.PlayerLocationBarRenderer;
 import ca.favro.vega.common.renderers.PlayerLocationBeamRenderer;
+import ca.favro.vega.common.renderers.Utils;
 import ca.favro.vega.common.waypoint.SnitchAlert;
 import ca.favro.vega.common.waypoint.VegaPlayer;
 import ca.favro.vega.common.waypoint.VegaPlayerWaypoint;
@@ -18,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.fabricmc.fabric.mixin.networking.client.accessor.MinecraftAccessor;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
@@ -31,9 +33,13 @@ import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
+import net.minecraft.network.protocol.game.ClientboundLoginPacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -44,7 +50,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.text.MessageFormat;
+import java.time.Instant;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -61,7 +70,7 @@ import java.util.stream.Collectors;
 
 public final class Vega implements IVega {
     public static final String MOD_ID = "vega";
-    private static final String MOD_VERSION = "1.0.3-1.21.11-ALPHA";
+    private static final String MOD_VERSION = "1.0.4-1.21.11-ALPHA";
     public final Logger LOGGER;
     private static Vega instance = null;
     private String serverHash;
@@ -75,14 +84,12 @@ public final class Vega implements IVega {
             .registerTypeAdapter(VegaPlayer.class, new VegaPlayer.VegaPlayerDeserializer())
             .registerTypeAdapter(VegaUser.class, new VegaUser.VegaUserSerializer())
             .create();
-    public static VegaConfig config;
+    public VegaConfig config;
     private VegaWaypointManager vegaWaypointManager;
     private static PlayerLocationBarRenderer playerLocationBarRenderer;
     private static PlayerLocationBeamRenderer playerLocationBeamRenderer;
     private static Runnable playerSender;
     private static ScheduledExecutorService playerSenderRunner;
-    private static Runnable snitchSender;
-    private static ScheduledExecutorService snitchSenderRunner;
     private KeyMapping settingsKey;
     private KeyMapping renderKey;
     private KeyMapping listKey;
@@ -106,7 +113,7 @@ public final class Vega implements IVega {
         this.voxelmapEnabled = FabricLoader.getInstance().isModLoaded("voxelmap");
 
         if (voxelmapEnabled) {
-            voxelmapIntegration = new VoxelmapIntegration(this);
+            voxelmapIntegration = new VoxelmapIntegration(this, Minecraft.getInstance());
         }
     }
 
@@ -218,9 +225,6 @@ public final class Vega implements IVega {
             tryWSConnection();
             playerSenderRunner = Executors.newScheduledThreadPool(1);
             playerSenderRunner.scheduleAtFixedRate(playerSender, 0, 3, TimeUnit.SECONDS);
-            if (voxelmapEnabled) {
-                voxelmapIntegration.start();
-            }
         } else {
             handleDisconnectedFromServer(null, null);
         }
@@ -248,6 +252,15 @@ public final class Vega implements IVega {
         }
     }
 
+    @Override
+    public Component handleReplaceName(Component name, UUID uuid) {
+        VegaUser vegaUser = this.vegaUsers.get(uuid);
+        if (vegaUser != null && name != null) {
+            return name.copy().withColor(Utils.status2Color(vegaUser.status()));
+        }
+        return null;
+    }
+
     public void handlePlayerMove(Player player) {
         Vec3 pos = player.position();
         Entity e = Minecraft.getInstance().getCameraEntity();
@@ -267,8 +280,8 @@ public final class Vega implements IVega {
     public void handleScreenshot(File gameDirectory, RenderTarget renderTarget, Consumer<Component> messageConsumer) {
 
     }
+
     public void receiveRemotePlayer(VegaPlayer receivedPlayer) {
-        LOGGER.info("Received remote {} in {}", receivedPlayer.name(), receivedPlayer.world());
         Matcher matcher = oldWorldKey.matcher(receivedPlayer.world());
         if (matcher.matches()) {
             receivedPlayer = new VegaPlayer(receivedPlayer.name(),
@@ -342,25 +355,56 @@ public final class Vega implements IVega {
             if (o.isPresent()) {
                 UUID uuid = o.get().getProfile().id();
 
-                trackedPlayers.put(uuid, new VegaPlayer(
-                        snitchAlert.accountName, uuid, snitchAlert.pos, snitchAlert.world, snitchAlert.ts, VegaPlayer.Source.SNITCH
-                ));
-                vegaWaypointManager.trackOrUpdate(new VegaPlayerWaypoint(
-                        trackedPlayers.get(uuid)
-                ));
-
-                queuedSnitchAlerts.put(uuid, snitchAlert);
-                if (voxelmapEnabled) {
-                    voxelmapIntegration.sync();
+                if (trackedPlayers.containsKey(uuid)) {
+                    VegaPlayer p = trackedPlayers.get(uuid);
+                    // Prefer local waypoints over snitch hits to avoid the waypoint jumping around
+                    if (((Instant.now().toEpochMilli() - p.time()) / 1000) > 2 && p.source() != VegaPlayer.Source.LOCAL) {
+                        handleSnitch(snitchAlert, uuid);
+                    }
+                } else {
+                    handleSnitch(snitchAlert, uuid);
                 }
             }
         }
         return false;
     }
 
+    private void handleSnitch(SnitchAlert snitchAlert, UUID uuid) {
+        trackedPlayers.put(uuid, new VegaPlayer(
+                snitchAlert.accountName, uuid, snitchAlert.pos, snitchAlert.world, snitchAlert.ts, VegaPlayer.Source.SNITCH
+        ));
+        vegaWaypointManager.trackOrUpdate(new VegaPlayerWaypoint(
+                trackedPlayers.get(uuid)
+        ));
+
+        queuedSnitchAlerts.put(uuid, snitchAlert);
+        if (voxelmapEnabled) {
+            // TODO only sync the waypoint we just got
+            voxelmapIntegration.sync();
+        }
+    }
+
     @Override
     public boolean handlePacketSending(Packet<?> packet) {
+        if (packet instanceof ServerboundPlayerLoadedPacket splp) {
+            if (voxelmapEnabled) {
+                voxelmapIntegration.clearManagedWaypoints();
+                voxelmapIntegration.start();
+            }
+        }
         return false;
+    }
+
+    public void stopMap() {
+        if (voxelmapEnabled) {
+            voxelmapIntegration.stop();
+        }
+    }
+
+    public void startMap() {
+        if (voxelmapEnabled) {
+            voxelmapIntegration.start();
+        }
     }
 
     public static WebSocket getWebSocket() {

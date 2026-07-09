@@ -22,7 +22,6 @@ import net.minecraft.world.waypoints.Waypoint;
 
 import java.time.Instant;
 
-import static ca.favro.vega.common.Vega.config;
 import static ca.favro.vega.common.renderers.Utils.status2Color;
 
 public class PlayerLocationBarRenderer implements ContextualBarRenderer {
@@ -54,9 +53,9 @@ public class PlayerLocationBarRenderer implements ContextualBarRenderer {
             vega.getVegaWaypointManager().forEachWaypoint(
                     (trackedWaypoint) -> {
                         if (!trackedWaypoint.id().equals(entity.getUUID()) // Don't render own waypoint
-                                && (((Instant.now().toEpochMilli() - trackedWaypoint.getDateAdded()) / (3.6 * Math.pow(10, 6))) < config.getWaypointKeepAge())
+                                && (((Instant.now().toEpochMilli() - trackedWaypoint.getDateAdded()) / (3.6 * Math.pow(10, 6))) < vega.config.getWaypointKeepAge())
                         ) {
-                            if (config.isShowOnlyFocused()) {
+                            if (vega.config.isShowOnlyFocused()) {
                                 if (vega.getFocusedPlayers().contains(trackedWaypoint.id())) {
                                     extracted(guiGraphics, trackedWaypoint, entity, i);
                                 }

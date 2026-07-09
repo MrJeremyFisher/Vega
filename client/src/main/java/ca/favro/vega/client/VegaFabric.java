@@ -26,7 +26,7 @@ import java.nio.file.Paths;
 
 public class VegaFabric implements ClientModInitializer {
     public static final String MOD_ID = "vega";
-    public static final String MOD_LOADER_VERSION = "1.0.1-1.21.11-ALPHA";
+    public static final String MOD_LOADER_VERSION = "1.0.2-1.21.11-ALPHA";
     public static final Logger LOGGER = new VegaLogger(VegaFabric.class);
     private final KeyMapping.Category keyCategory = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("vega", "keycategory"));
     private final KeyMapping renderKey = new KeyMapping("Toggle Vega Renderers", GLFW.GLFW_KEY_PERIOD, keyCategory);

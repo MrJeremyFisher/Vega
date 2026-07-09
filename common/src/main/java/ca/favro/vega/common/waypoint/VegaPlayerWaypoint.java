@@ -10,11 +10,11 @@ import java.time.Instant;
 import java.util.UUID;
 
 public class VegaPlayerWaypoint implements Waypoint {
-    private String world;
-    private Vec3 vector;
-    private long dateAdded;
-    private UUID identifier;
     private String name;
+    private UUID identifier;
+    private Vec3 vector;
+    private String world;
+    private long dateAdded;
     private Icon icon;
 
     public VegaPlayerWaypoint(UUID uuid, String world, Icon icon, Vec3 vector) {
@@ -23,6 +23,15 @@ public class VegaPlayerWaypoint implements Waypoint {
         this.identifier = uuid;
         this.icon = icon;
         this.dateAdded = Instant.now().toEpochMilli();
+    }
+
+    public VegaPlayerWaypoint(VegaPlayerWaypoint vegaPlayerWaypoint) {
+        this.name = vegaPlayerWaypoint.name;
+        this.identifier = vegaPlayerWaypoint.identifier;
+        this.world = vegaPlayerWaypoint.world;
+        this.icon = vegaPlayerWaypoint.icon;
+        this.vector = vegaPlayerWaypoint.vector;
+        this.dateAdded = vegaPlayerWaypoint.dateAdded;
     }
 
     public VegaPlayerWaypoint(VegaPlayer vp) {

@@ -15,8 +15,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static ca.favro.vega.common.Vega.config;
-
 public class VegaWebsocketHandler implements WebSocket.Listener {
     private final Logger LOGGER;
     private StringBuffer messageBuffer = new StringBuffer();
@@ -37,7 +35,7 @@ public class VegaWebsocketHandler implements WebSocket.Listener {
 
     @Override
     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
-        if (!config.isReceiveInfo()) {
+        if (!vega.config.isReceiveInfo()) {
             return WebSocket.Listener.super.onText(webSocket, data, true);
         }
 
@@ -49,11 +47,11 @@ public class VegaWebsocketHandler implements WebSocket.Listener {
             messageBuffer.delete(0, messageBuffer.length());
             if (data.length() == 3) {
                 if (data.toString().equals("200")) {
-                    LOGGER.info("Connected to Vega server at {}", config.getWssURL());
+                    LOGGER.info("Connected to Vega server at {}", vega.config.getWssURL());
                     Vega.popOpenToast();
                     return WebSocket.Listener.super.onText(webSocket, data, true);
                 } else if (data.toString().equals("401")) {
-                    LOGGER.info("Vega server {} connection refused. Are you authenticated?", config.getWssURL());
+                    LOGGER.info("Vega server {} connection refused. Are you authenticated?", vega.config.getWssURL());
                     return WebSocket.Listener.super.onText(webSocket, data, true);
                 }
                 return WebSocket.Listener.super.onText(webSocket, data, true);

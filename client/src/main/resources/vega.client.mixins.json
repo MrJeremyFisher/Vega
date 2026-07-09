@@ -4,8 +4,9 @@
   "package": "ca.favro.vega.client.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "ConnectionMixin",
     "ClientHandshakeMixin",
+    "ConnectionMixin",
+    "PlayerListMixin",
     "ScreenshotMixin",
     "TransientEntitySectionManagerMixin",
     "TransientEntitySectionManagerMixin$ListenerMixin"
@@ -15,5 +16,8 @@
   },
   "overwrites": {
     "requireAnnotations": true
-  }
+  },
+  "mixins": [
+    "PlayerEntityMixin"
+  ]
 }

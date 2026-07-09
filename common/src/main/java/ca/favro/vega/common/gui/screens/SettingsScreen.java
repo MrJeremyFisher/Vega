@@ -1,6 +1,7 @@
 package ca.favro.vega.common.gui.screens;
 
 import ca.favro.vega.common.Vega;
+import ca.favro.vega.common.config.VegaConfig;
 import ca.favro.vega.common.gui.components.SliderButton;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -11,8 +12,6 @@ import net.minecraft.network.chat.Component;
 
 import java.awt.Color;
 
-import static ca.favro.vega.common.Vega.config;
-
 public class SettingsScreen extends Screen {
     private final Screen parent;
     private EditBox wssEditBox;
@@ -22,13 +21,16 @@ public class SettingsScreen extends Screen {
     private Button renderBeamsButton;
     private Button renderNamePlatesButton;
     private Button renderLocatorBarButton;
+    private Button showOnMapButton;
     private SliderButton waypointAgeSlider;
+    private VegaConfig config;
 
     private int connectY;
 
     public SettingsScreen(Screen parent) {
         super(Component.literal("Vega Settings"));
         this.parent = parent;
+        this.config = Vega.getInstance().config;
     }
 
     @Override
@@ -100,6 +102,19 @@ public class SettingsScreen extends Screen {
 
         y += 24;
 
+        showOnMapButton = Button.builder(Component.literal("Show waypoints on map: "), (btn) -> {
+            if (config.isShowOnMap()) {
+                Vega.getInstance().stopMap();
+            } else {
+                Vega.getInstance().startMap();
+            }
+            config.setShowOnMap(!config.isShowOnMap());
+            config.save();
+        }).bounds(x, y, 200, 20).build();
+        addRenderableWidget(showOnMapButton);
+
+        y += 24;
+
         waypointAgeSlider = new SliderButton(x, y, 200, 8F, 0.1F, "Waypoint keep age (hrs)", config.getWaypointKeepAge(), false);
         addRenderableWidget(waypointAgeSlider);
         y += 24;
@@ -115,6 +130,7 @@ public class SettingsScreen extends Screen {
         renderBeamsButton.setMessage(Component.literal("Render beams: " + (config.isShowBeams() ? "On" : "Off")));
         renderNamePlatesButton.setMessage(Component.literal("Render names: " + (config.isShowNamePlates() ? "On" : "Off")));
         renderLocatorBarButton.setMessage(Component.literal("Render locator bar: " + (config.isShowLocatorBar() ? "On" : "Off")));
+        showOnMapButton.setMessage(Component.literal("Show waypoints on map: " + (config.isShowOnMap() ? "On" : "Off")));
 
         boolean isChanged = false;
 

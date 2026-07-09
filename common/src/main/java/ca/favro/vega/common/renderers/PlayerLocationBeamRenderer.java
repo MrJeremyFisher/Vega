@@ -20,7 +20,6 @@ import net.minecraft.world.phys.Vec3;
 
 import java.time.Instant;
 
-import static ca.favro.vega.common.Vega.config;
 import static ca.favro.vega.common.renderers.Utils.status2Color;
 
 public class PlayerLocationBeamRenderer {
@@ -35,16 +34,16 @@ public class PlayerLocationBeamRenderer {
         Entity entity = this.minecraft.getCameraEntity();
         vega.getVegaWaypointManager().forEachWaypoint((vpw) -> {
             if (!vpw.id().equals(entity.getUUID())
-                    && (((Instant.now().toEpochMilli() - vpw.getDateAdded()) / (3.6 * Math.pow(10, 6))) < config.getWaypointKeepAge())
+                    && (((Instant.now().toEpochMilli() - vpw.getDateAdded()) / (3.6 * Math.pow(10, 6))) < vega.config.getWaypointKeepAge())
             ) {
-                if (config.isShowOnlyFocused()) {
+                if (vega.config.isShowOnlyFocused()) {
                     if (vega.getFocusedPlayers().contains(vpw.id())) {
-                        if (config.isShowBeams()) renderBeam(poseStack, multiBufferSource, vpw);
-                        if (config.isShowNamePlates()) renderSign(poseStack, multiBufferSource, vpw);
+                        if (vega.config.isShowBeams()) renderBeam(poseStack, multiBufferSource, vpw);
+                        if (vega.config.isShowNamePlates()) renderSign(poseStack, multiBufferSource, vpw);
                     }
                 } else {
-                    if (config.isShowBeams()) renderBeam(poseStack, multiBufferSource, vpw);
-                    if (config.isShowNamePlates()) renderSign(poseStack, multiBufferSource, vpw);
+                    if (vega.config.isShowBeams()) renderBeam(poseStack, multiBufferSource, vpw);
+                    if (vega.config.isShowNamePlates()) renderSign(poseStack, multiBufferSource, vpw);
                 }
             }
         }, minecraft.level.dimension().identifier().getPath());
@@ -52,7 +51,8 @@ public class PlayerLocationBeamRenderer {
         buffers.endBatch();
     }
 
-    private void renderSign(PoseStack poseStack, MultiBufferSource bufferSource, VegaPlayerWaypoint waypoint) {
+    private void renderSign(PoseStack poseStack, MultiBufferSource bufferSource, VegaPlayerWaypoint wp) {
+        VegaPlayerWaypoint waypoint = new VegaPlayerWaypoint(wp);
         String mainLabel = waypoint.getName();
 
         float distance = (float) minecraft.getCameraEntity().position().distanceTo(waypoint.position());
@@ -122,7 +122,8 @@ public class PlayerLocationBeamRenderer {
         poseStack.popPose();
     }
 
-    private void renderBeam(PoseStack poseStack, MultiBufferSource bufferSource, VegaPlayerWaypoint waypoint) {
+    private void renderBeam(PoseStack poseStack, MultiBufferSource bufferSource, VegaPlayerWaypoint wp) {
+        VegaPlayerWaypoint waypoint = new VegaPlayerWaypoint(wp);
         int height = minecraft.level.getHeight();
 
         float spentTime = minecraft.getCameraEntity().tickCount + minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false);

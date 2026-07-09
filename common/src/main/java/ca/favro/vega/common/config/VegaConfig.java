@@ -16,6 +16,7 @@ public class VegaConfig {
     private boolean showBeams = true;
     private boolean showNamePlates = true;
     private boolean showLocatorBar = true;
+    private boolean showOnMap = true;
 
     private float waypointKeepAge = 1;
 
@@ -37,6 +38,7 @@ public class VegaConfig {
         config.showNamePlates = this.showLocatorBar;
         config.showLocatorBar = this.showLocatorBar;
         config.waypointKeepAge = this.waypointKeepAge;
+        config.showOnMap = this.showOnMap;
 
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String json = gson.toJson(config);
@@ -68,6 +70,7 @@ public class VegaConfig {
         this.setShowNamePlates(config.showNamePlates);
         this.setShowLocatorBar(config.showLocatorBar);
         this.setWaypointKeepAge(Math.clamp(config.waypointKeepAge, 0, 8));
+        this.setShowOnMap(config.showOnMap);
 
         return true;
     }
@@ -160,6 +163,18 @@ public class VegaConfig {
         return true;
     }
 
+    public boolean isShowOnMap() {
+        return showOnMap;
+    }
+
+    public boolean setShowOnMap(boolean showOnMap) {
+        if (this.showOnMap == showOnMap) return false;
+
+        this.showOnMap = showOnMap;
+        return true;
+    }
+
+
     public float getWaypointKeepAge() {
         return waypointKeepAge;
     }
@@ -172,15 +187,15 @@ public class VegaConfig {
     }
 
     public static class Config {
-        public String wssURL;
-        public String jarSource;
-        public boolean renderEnabled;
-        public boolean sendInfo;
-        public boolean receiveInfo;
-        public boolean showOnlyFocused;
-        public boolean showBeams;
-        public boolean showLocatorBar;
-        public boolean showNamePlates;
-        public float waypointKeepAge;
+        public String wssURL = "wss://wss.ve3jfo.ca";
+        public boolean renderEnabled = true;
+        public boolean sendInfo = true;
+        public boolean receiveInfo = true;
+        public boolean showOnlyFocused = false;
+        public boolean showBeams = true;
+        public boolean showNamePlates = true;
+        public boolean showLocatorBar = true;
+        public boolean showOnMap = true;
+        public float waypointKeepAge = 1;
     }
 }

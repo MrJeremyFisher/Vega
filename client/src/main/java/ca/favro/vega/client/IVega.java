@@ -18,6 +18,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.PublicKey;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public interface IVega {
@@ -54,6 +55,8 @@ public interface IVega {
     boolean handlePacketSending(Packet<?> packet);
 
     void handleDisconnectedFromServer(DisconnectionDetails disconnectionDetails, Connection self);
+
+    Component handleReplaceName(Component name, UUID uuid);
 
     void tick(Minecraft minecraft);
 }
