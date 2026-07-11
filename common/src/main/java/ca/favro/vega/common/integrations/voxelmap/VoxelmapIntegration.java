@@ -85,6 +85,7 @@ public class VoxelmapIntegration {
         }
         trackedPts.clear();
 
+        // TODO: maybe hide these in the waypoint list so they don't add clutter
         vega.getVegaWaypointManager().forEachWaypoint(vegaPlayerWaypoint -> {
             // TODO I do this check a lot. Make it a method
             if (!vegaPlayerWaypoint.id().equals(entity.getUUID())
@@ -105,7 +106,12 @@ public class VoxelmapIntegration {
                         (color >> 16 & 0xFF) / 255F,
                         (color >> 8 & 0xFF) / 255F,
                         (color & 0xFF) / 255F,
-                        "camera", // TODO type dependent icons
+                        switch (vega.getTrackedPlayers().get(vegaPlayerWaypoint.id()).source()) {
+                            case LOCAL -> "person";
+                            case REMOTE -> "world";
+                            case SNITCH -> "camera";
+                            case null -> "point";
+                        },
                         vegaPlayerWaypoint.getWorld(),
                         dimensions
                 );

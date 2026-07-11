@@ -23,6 +23,7 @@ public class SettingsScreen extends Screen {
     private Button renderLocatorBarButton;
     private Button showOnMapButton;
     private SliderButton waypointAgeSlider;
+    private Vega vega;
     private VegaConfig config;
 
     private int connectY;
@@ -30,7 +31,8 @@ public class SettingsScreen extends Screen {
     public SettingsScreen(Screen parent) {
         super(Component.literal("Vega Settings"));
         this.parent = parent;
-        this.config = Vega.getInstance().config;
+        this.vega = Vega.getInstance();
+        this.config = vega.config;
     }
 
     @Override
@@ -47,12 +49,12 @@ public class SettingsScreen extends Screen {
         y += 24;
 
         addRenderableWidget(Button.builder(Component.literal("Connect"), (btn) -> {
-            Vega.getInstance().tryWSConnection();
+            vega.tryWSConnection();
         }).bounds(x, y, 100, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal("Disconnect"), (btn) -> {
-            if (Vega.getWebSocket() != null) {
-                Vega.getWebSocket().sendClose(400, "User disconnect");
+            if (vega.getWebSocket() != null) {
+                vega.getWebSocket().sendClose(400, "User disconnect");
             }
         }).bounds(x + 101, y, 100, 20).build());
 
@@ -146,12 +148,8 @@ public class SettingsScreen extends Screen {
         guiGraphics.drawString(this.font, "Websocket address:", this.width / 2 - 100 - 100, connectY - 24 + 6, Color.WHITE.getRGB());
 
         Component connection;
-        if (Vega.getWebSocket() != null) {
-            if (Vega.getWebSocket().isInputClosed()) {
-                connection = Component.literal("Disconnected").withColor(Color.RED.getRGB());
-            } else {
-                connection = Component.literal("Connected").withColor(Color.GREEN.getRGB());
-            }
+        if (vega.getWebSocket() != null && !vega.getWebSocket().isInputClosed()) {
+            connection = Component.literal("Connected").withColor(Color.GREEN.getRGB());
         } else {
             connection = Component.literal("Disconnected").withColor(Color.RED.getRGB());
         }

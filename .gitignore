@@ -20,3 +20,6 @@ classes/
 
 .architectury-transformer
 /dist/
+gradlew
+gradlew.bat
+gradle-wrapper.jar

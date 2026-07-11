@@ -55,26 +55,28 @@ public class PlayerLocationBeamRenderer {
         VegaPlayerWaypoint waypoint = new VegaPlayerWaypoint(wp);
         String mainLabel = waypoint.getName();
 
-        float distance = (float) minecraft.getCameraEntity().position().distanceTo(waypoint.position());
-        double maxDistance = minecraft.gameRenderer.getDepthFar() - 8.0;
-        double adjustedDistance = distance;
+        Vec3 cPos = minecraft.getCameraEntity().position();
+        double x = waypoint.position().x + 0.5 - cPos.x;
+        double y = waypoint.position().y + 0.5 - cPos.y;
+        double z = waypoint.position().z + 0.5 - cPos.z;
+        float distance = (float) Mth.length(x, y, z);
+        // TODO make setting
+        if (distance <= 3) {
+            return;
+        }
+
+        poseStack.pushPose();
+        float maxDistance = (Minecraft.getInstance().options.getEffectiveRenderDistance() * 16 * 4) - 2;
+        float adjustedDistance = distance;
         if (distance > maxDistance) {
-            waypoint.setPosition(waypoint.position().multiply(1 / distance * maxDistance, 1 / distance * maxDistance, 1 / distance * maxDistance));
+            x = x / distance * maxDistance;
+            y = y / distance * maxDistance;
+            z = z / distance * maxDistance;
             adjustedDistance = maxDistance;
         }
 
-        float scale = ((float) adjustedDistance * 0.15F + 1.0F) * 0.0266F;
-
-        poseStack.pushPose();
-
-        Vec3 pos = waypoint.position();
-        Entity e = minecraft.getCameraEntity();
-        pos = new Vec3(pos.x, e == null ? 64 : e.getY(), pos.z);
-        poseStack.translate(pos
-                .subtract(minecraft.getCameraEntity()
-                        .getPosition(minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false)))
-                .add(0f, 1.5f, 0f)
-        );
+        float scale = (adjustedDistance * 0.12F + 1.0F) * 0.0266F;
+        poseStack.translate(x, y, z);
         poseStack.mulPose(minecraft.gameRenderer.getMainCamera().rotation());
         poseStack.scale(scale, -scale, scale);
 

@@ -6,6 +6,7 @@ import ca.favro.vega.common.gui.components.IconToast;
 import ca.favro.vega.common.gui.screens.SettingsScreen;
 import ca.favro.vega.common.gui.screens.VegaPlayerScreen;
 import ca.favro.vega.common.integrations.combatradar.CombatRadarIntegration;
+import ca.favro.vega.common.integrations.journeymap.JourneymapIntegration;
 import ca.favro.vega.common.integrations.voxelmap.VoxelmapIntegration;
 import ca.favro.vega.common.integrations.xaero.XaeroMinimapIntegration;
 import ca.favro.vega.common.renderers.PlayerLocationBarRenderer;
@@ -47,6 +48,7 @@ import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.text.MessageFormat;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -91,6 +93,7 @@ public final class Vega implements IVega {
     private final boolean voxelmapEnabled;
     private VoxelmapIntegration voxelmapIntegration;
     private boolean journeymapEnabled;
+    private JourneymapIntegration journeymapIntegration;
 
     private final boolean xaerosmapEnabled;
     private XaeroMinimapIntegration xaeroMinimapIntegration;
@@ -108,11 +111,15 @@ public final class Vega implements IVega {
         this.combatRadarEnabled = FabricLoader.getInstance().isModLoaded("combatradar");
         this.voxelmapEnabled = FabricLoader.getInstance().isModLoaded("voxelmap");
         this.xaerosmapEnabled = FabricLoader.getInstance().isModLoaded("xaerominimap");
+        this.journeymapEnabled = FabricLoader.getInstance().isModLoaded("journeymap");
         if (voxelmapEnabled) {
             voxelmapIntegration = new VoxelmapIntegration(this, Minecraft.getInstance());
         }
         if (xaerosmapEnabled) {
             xaeroMinimapIntegration = new XaeroMinimapIntegration(this, Minecraft.getInstance());
+        }
+        if (journeymapEnabled) {
+            journeymapIntegration = new JourneymapIntegration(this, Minecraft.getInstance());
         }
     }
 
@@ -386,6 +393,10 @@ public final class Vega implements IVega {
                 xaeroMinimapIntegration.clearManagedWaypoints();
                 xaeroMinimapIntegration.start();
             }
+            if (this.journeymapEnabled) {
+                journeymapIntegration.clearManagedWaypoints();
+                journeymapIntegration.start();
+            }
         }
         return false;
     }
@@ -397,6 +408,9 @@ public final class Vega implements IVega {
         if (this.xaerosmapEnabled) {
             xaeroMinimapIntegration.stop();
         }
+        if (this.journeymapEnabled) {
+            journeymapIntegration.stop();
+        }
     }
 
     public void startMap() {
@@ -405,6 +419,9 @@ public final class Vega implements IVega {
         }
         if (this.xaerosmapEnabled) {
             xaeroMinimapIntegration.start();
+        }
+        if (this.journeymapEnabled) {
+            journeymapIntegration.start();
         }
     }
 
@@ -415,10 +432,17 @@ public final class Vega implements IVega {
         if (this.xaerosmapEnabled) {
             xaeroMinimapIntegration.sync();
         }
+        if (this.journeymapEnabled) {
+            journeymapIntegration.sync();
+        }
     }
 
-    public static WebSocket getWebSocket() {
+    public WebSocket getWebSocket() {
         return webSocket;
+    }
+
+    public Map<UUID, VegaPlayer> getTrackedPlayers() {
+        return trackedPlayers;
     }
 
     public void tryWSConnection() {

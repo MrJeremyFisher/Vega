@@ -8,11 +8,16 @@ group = project.maven_group
 allprojects {
     repositories {
         maven {
-            name = 'ParchmentMC'
-            url = 'https://maven.parchmentmc.org'
+            name = "ParchmentMC"
+            url = "https://maven.parchmentmc.org"
         }
         maven {
+            name = "Modrinth"
             url = "https://api.modrinth.com/maven"
+        }
+        maven {
+            name = "New JourneyMap Maven"
+            url = "https://maven.blamejared.com"
         }
     }
 }
