@@ -7,6 +7,7 @@ import ca.favro.vega.common.gui.screens.SettingsScreen;
 import ca.favro.vega.common.gui.screens.VegaPlayerScreen;
 import ca.favro.vega.common.integrations.combatradar.CombatRadarIntegration;
 import ca.favro.vega.common.integrations.voxelmap.VoxelmapIntegration;
+import ca.favro.vega.common.integrations.xaero.XaeroMinimapIntegration;
 import ca.favro.vega.common.renderers.PlayerLocationBarRenderer;
 import ca.favro.vega.common.renderers.PlayerLocationBeamRenderer;
 import ca.favro.vega.common.renderers.Utils;
@@ -19,7 +20,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.fabricmc.fabric.mixin.networking.client.accessor.MinecraftAccessor;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
@@ -33,13 +33,9 @@ import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
-import net.minecraft.network.protocol.game.ClientboundLoginPacket;
-import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -51,9 +47,7 @@ import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.text.MessageFormat;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -93,12 +87,14 @@ public final class Vega implements IVega {
     private KeyMapping settingsKey;
     private KeyMapping renderKey;
     private KeyMapping listKey;
-    private boolean combatRadarEnabled;
-    private boolean voxelmapEnabled;
+    private final boolean combatRadarEnabled;
+    private final boolean voxelmapEnabled;
     private VoxelmapIntegration voxelmapIntegration;
     private boolean journeymapEnabled;
-    private boolean xaerosmapEnabled;
-    private static Pattern oldWorldKey = Pattern.compile("ResourceKey\\[minecraft:dimension \\/ minecraft:(.*)\\]");
+
+    private final boolean xaerosmapEnabled;
+    private XaeroMinimapIntegration xaeroMinimapIntegration;
+    private static final Pattern oldWorldKey = Pattern.compile("ResourceKey\\[minecraft:dimension \\/ minecraft:(.*)\\]");
 
     // TODO combat loggers have different UUIDS than the player which can cause duplicate waypoints. Could try fixing this on Civ. CTP just assigns a random UUID
     // On the server we map by name so its nbd really. Maybe we should just map by name here as well
@@ -111,9 +107,12 @@ public final class Vega implements IVega {
         // TODO does this still work if mod loads after vega? do we need to depend?
         this.combatRadarEnabled = FabricLoader.getInstance().isModLoaded("combatradar");
         this.voxelmapEnabled = FabricLoader.getInstance().isModLoaded("voxelmap");
-
+        this.xaerosmapEnabled = FabricLoader.getInstance().isModLoaded("xaerominimap");
         if (voxelmapEnabled) {
             voxelmapIntegration = new VoxelmapIntegration(this, Minecraft.getInstance());
+        }
+        if (xaerosmapEnabled) {
+            xaeroMinimapIntegration = new XaeroMinimapIntegration(this, Minecraft.getInstance());
         }
     }
 
@@ -147,9 +146,7 @@ public final class Vega implements IVega {
         if (this.combatRadarEnabled) {
             CombatRadarIntegration.syncStatuses();
         }
-        if (this.voxelmapEnabled) {
-            voxelmapIntegration.sync();
-        }
+        syncMaps();
     }
 
     public Set<UUID> getFocusedPlayers() {
@@ -298,9 +295,7 @@ public final class Vega implements IVega {
                 vegaWaypointManager.trackOrUpdate(new VegaPlayerWaypoint(
                         trackedPlayers.get(receivedPlayer.uuid())
                 ));
-                if (this.voxelmapEnabled) {
-                    voxelmapIntegration.sync();
-                }
+                syncMaps();
             }
         } else {
             trackedPlayers.put(receivedPlayer.uuid(),
@@ -309,9 +304,7 @@ public final class Vega implements IVega {
             vegaWaypointManager.trackOrUpdate(new VegaPlayerWaypoint(
                     trackedPlayers.get(receivedPlayer.uuid())
             ));
-            if (this.voxelmapEnabled) {
-                voxelmapIntegration.sync();
-            }
+            syncMaps();
         }
         // Do nothing if our entry is newer than what we got from the server
     }
@@ -378,32 +371,49 @@ public final class Vega implements IVega {
         ));
 
         queuedSnitchAlerts.put(uuid, snitchAlert);
-        if (voxelmapEnabled) {
-            // TODO only sync the waypoint we just got
-            voxelmapIntegration.sync();
-        }
+        // TODO only sync the waypoint we just got
+        syncMaps();
     }
 
     @Override
     public boolean handlePacketSending(Packet<?> packet) {
         if (packet instanceof ServerboundPlayerLoadedPacket splp) {
-            if (voxelmapEnabled) {
+            if (this.voxelmapEnabled) {
                 voxelmapIntegration.clearManagedWaypoints();
                 voxelmapIntegration.start();
+            }
+            if (this.xaerosmapEnabled) {
+                xaeroMinimapIntegration.clearManagedWaypoints();
+                xaeroMinimapIntegration.start();
             }
         }
         return false;
     }
 
     public void stopMap() {
-        if (voxelmapEnabled) {
+        if (this.voxelmapEnabled) {
             voxelmapIntegration.stop();
+        }
+        if (this.xaerosmapEnabled) {
+            xaeroMinimapIntegration.stop();
         }
     }
 
     public void startMap() {
-        if (voxelmapEnabled) {
+        if (this.voxelmapEnabled) {
             voxelmapIntegration.start();
+        }
+        if (this.xaerosmapEnabled) {
+            xaeroMinimapIntegration.start();
+        }
+    }
+
+    public void syncMaps() {
+        if (this.voxelmapEnabled) {
+            voxelmapIntegration.sync();
+        }
+        if (this.xaerosmapEnabled) {
+            xaeroMinimapIntegration.sync();
         }
     }
 
