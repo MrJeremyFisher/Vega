@@ -19,8 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class VegaWebsocketHandler implements WebSocket.Listener {
     private final Logger LOGGER;
-    private StringBuffer messageBuffer = new StringBuffer();
-    private Vega vega;
+    private final StringBuffer messageBuffer = new StringBuffer();
+    private final Vega vega;
     private long start = 0;
 
     Type vegaUserListType = new TypeToken<ArrayList<VegaUser>>() {

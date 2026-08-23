@@ -13,7 +13,8 @@
     "VoxelWaypointManagerAccessorMixin",
     "ScreenshotMixin",
     "TransientEntitySectionManagerMixin",
-    "TransientEntitySectionManagerMixin$ListenerMixin"
+    "TransientEntitySectionManagerMixin$ListenerMixin",
+    "VoxelWaypointContainerAccessorMixin"
   ],
   "injectors": {
     "defaultRequire": 1

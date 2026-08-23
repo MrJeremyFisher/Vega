@@ -1,6 +1,7 @@
 package ca.favro.vega.common.mixin.mixins;
 
 import ca.favro.vega.client.VegaFabric;
+import ca.favro.vega.common.Vega;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.player.Player;
@@ -20,7 +21,7 @@ public class PlayerEntityMixin {
     )
     public void modifyDisplayName(CallbackInfoReturnable<Component> cir, MutableComponent mutableComponent) {
         try {
-            Component replacement = VegaFabric.vega.handleReplaceName(cir.getReturnValue(), ((Player) (Object) this).getUUID());
+            Component replacement = Vega.getInstance().handleReplaceName(cir.getReturnValue(), ((Player) (Object) this).getUUID());
             if (replacement != null) {
                 cir.setReturnValue(replacement);
             }

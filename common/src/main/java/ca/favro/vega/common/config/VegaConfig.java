@@ -1,5 +1,6 @@
 package ca.favro.vega.common.config;
 
+import ca.favro.vega.common.Vega;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -46,7 +47,7 @@ public class VegaConfig {
         try (FileWriter writer = new FileWriter(configFile)) {
             writer.write(json);
         } catch (Exception e) {
-            e.printStackTrace();
+            Vega.getInstance().LOGGER.error(e.getMessage(), e);
         }
     }
 
@@ -56,7 +57,7 @@ public class VegaConfig {
         try (FileReader reader = new FileReader(this.configFile)) {
             config = new Gson().fromJson(reader, Config.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            Vega.getInstance().LOGGER.error(e.getMessage(), e);
         }
 
         if (config == null) return false;

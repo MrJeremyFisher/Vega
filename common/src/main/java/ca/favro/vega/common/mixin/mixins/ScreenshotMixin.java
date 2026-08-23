@@ -1,6 +1,7 @@
 package ca.favro.vega.common.mixin.mixins;
 
 import ca.favro.vega.client.VegaFabric;
+import ca.favro.vega.common.Vega;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.Screenshot;
 import net.minecraft.network.chat.Component;
@@ -21,11 +22,11 @@ public class ScreenshotMixin {
     )
     private static void saveScreenshot(File file, @Nullable String string, RenderTarget renderTarget, int i, Consumer<Component> consumer, CallbackInfo ci) {
         try {
-            if (VegaFabric.vega != null) {
-                VegaFabric.vega.handleScreenshot(file, renderTarget, consumer);
+            if (Vega.getInstance() != null) {
+                Vega.getInstance().handleScreenshot(file, renderTarget, consumer);
             }
         } catch (Throwable e) {
-            VegaFabric.LOGGER.error("Error in Vega screenshot handling", e);
+            Vega.getInstance().LOGGER.error("Error in Vega screenshot handling", e);
         }
     }
 }

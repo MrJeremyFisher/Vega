@@ -29,7 +29,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.data.AtlasIds;
 import net.minecraft.network.Connection;
 import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.chat.Component;
@@ -70,10 +69,10 @@ public final class Vega implements IVega {
     private static Vega instance = null;
     private String serverHash;
     private static WebSocket webSocket;
-    private Set<UUID> focusedPlayers = new HashSet<>();
-    private Map<UUID, VegaPlayer> trackedPlayers = new ConcurrentHashMap<>();
+    private final Set<UUID> focusedPlayers = new HashSet<>();
+    private final Map<UUID, VegaPlayer> trackedPlayers = new ConcurrentHashMap<>();
     private Map<UUID, VegaUser> vegaUsers = new ConcurrentHashMap<>();
-    private Map<UUID, SnitchAlert> queuedSnitchAlerts = new ConcurrentHashMap<>();
+    private final Map<UUID, SnitchAlert> queuedSnitchAlerts = new ConcurrentHashMap<>();
     public static Gson gson = new GsonBuilder()
             .registerTypeAdapter(VegaPlayer.class, new VegaPlayer.VegaPlayerSerializer())
             .registerTypeAdapter(VegaPlayer.class, new VegaPlayer.VegaPlayerDeserializer())
@@ -85,13 +84,13 @@ public final class Vega implements IVega {
     private static PlayerLocationBeamRenderer playerLocationBeamRenderer;
     private static Runnable playerSender;
     private static ScheduledExecutorService playerSenderRunner;
-    private KeyMapping settingsKey;
-    private KeyMapping renderKey;
-    private KeyMapping listKey;
+    private final KeyMapping settingsKey;
+    private final KeyMapping renderKey;
+    private final KeyMapping listKey;
     private final boolean combatRadarEnabled;
     private final boolean voxelmapEnabled;
     private VoxelmapIntegration voxelmapIntegration;
-    private boolean journeymapEnabled;
+    private final boolean journeymapEnabled;
     private JourneymapIntegration journeymapIntegration;
     private final IconToast connectedToast = new IconToast(
             Component.literal("Connected"),
@@ -136,7 +135,10 @@ public final class Vega implements IVega {
 
     public static void popOpenToast() {
         // TODO remove disconnected toast
-        Minecraft.getInstance().execute(() -> Minecraft.getInstance().player.displayClientMessage(Component.literal("[Vega] Connected to Vega server"), false));
+        Minecraft instance = Minecraft.getInstance();
+        if (instance.player != null) {
+            Minecraft.getInstance().execute(() -> instance.player.displayClientMessage(Component.literal("[Vega] Connected to Vega server"), false));
+        }
         // TODO reenable when I figure out nineslice
 //        Minecraft.getInstance().getToastManager().addToast(
 //                getInstance().connectedToast
@@ -144,7 +146,10 @@ public final class Vega implements IVega {
     }
 
     public static void popCloseToast() {
-        Minecraft.getInstance().execute(() -> Minecraft.getInstance().player.displayClientMessage(Component.literal("[Vega] Disconnected from Vega server"), false));
+        Minecraft instance = Minecraft.getInstance();
+        if (instance.player != null) {
+            Minecraft.getInstance().execute(() -> instance.player.displayClientMessage(Component.literal("[Vega] Disconnected from Vega server"), false));
+        }
 //        Minecraft.getInstance().getToastManager().addToast(
 //                getInstance().disconnectedToast
 //        );
@@ -182,7 +187,7 @@ public final class Vega implements IVega {
             try {
                 configFile.createNewFile();
             } catch (Exception e) {
-                e.printStackTrace();
+                LOGGER.error(e.getMessage(), e);
             }
             config.save();
         } else {

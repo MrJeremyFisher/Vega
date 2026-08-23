@@ -4,6 +4,7 @@ import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import net.fabricmc.loader.impl.FabricLoaderImpl;
 import net.fabricmc.loader.impl.launch.FabricLauncherBase;
 import org.slf4j.Logger;
+import org.spongepowered.asm.mixin.Mixins;
 
 import java.io.BufferedInputStream;
 import java.io.File;

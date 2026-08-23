@@ -24,8 +24,8 @@ public class SettingsScreen extends Screen {
     private Button renderLocatorBarButton;
     private Button showOnMapButton;
     private SliderButton waypointAgeSlider;
-    private Vega vega;
-    private VegaConfig config;
+    private final Vega vega;
+    private final VegaConfig config;
 
     private int connectY;
 
@@ -49,9 +49,8 @@ public class SettingsScreen extends Screen {
         connectY = (y += 24);
         y += 24;
 
-        addRenderableWidget(Button.builder(Component.literal("Connect"), (btn) -> {
-            vega.tryWSConnection();
-        }).bounds(x, y, 100, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Connect"), (btn) ->
+                vega.tryWSConnection()).bounds(x, y, 100, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal("Disconnect"), (btn) -> {
             if (vega.getWebSocket() != null) {

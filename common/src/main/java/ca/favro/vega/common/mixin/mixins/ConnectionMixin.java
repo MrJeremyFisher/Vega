@@ -1,6 +1,7 @@
 package ca.favro.vega.common.mixin.mixins;
 
 import ca.favro.vega.client.VegaFabric;
+import ca.favro.vega.common.Vega;
 import io.netty.channel.ChannelFutureListener;
 import net.minecraft.network.Connection;
 import net.minecraft.network.DisconnectionDetails;
@@ -21,12 +22,12 @@ public class ConnectionMixin {
     )
     private void sendPacket(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener, CallbackInfo ci) {
         try {
-            boolean dropPacket = VegaFabric.vega.handlePacketSending(packet);
+            boolean dropPacket = Vega.getInstance().handlePacketSending(packet);
             if (dropPacket) {
                 ci.cancel();
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            Vega.getInstance().LOGGER.error(e.getMessage(), e);
         }
     }
 
@@ -42,20 +43,20 @@ public class ConnectionMixin {
                 ci.cancel();
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            Vega.getInstance().LOGGER.error(e.getMessage(), e);
         }
     }
 
-    @Inject(
-            method = {"Lnet/minecraft/network/Connection;disconnect(Lnet/minecraft/network/DisconnectionDetails;)V"},
-            at = {@At("HEAD")}
-    )
-    private void handleDisconnect(DisconnectionDetails disconnectionDetails, CallbackInfo ci) {
-        try {
-//            Connection self = (Connection) (Object) this;
-//            VegaFabric.vega.handleDisconnectedFromServer(disconnectionDetails, self);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
+//    @Inject(
+//            method = {"Lnet/minecraft/network/Connection;disconnect(Lnet/minecraft/network/DisconnectionDetails;)V"},
+//            at = {@At("HEAD")}
+//    )
+//    private void handleDisconnect(DisconnectionDetails disconnectionDetails, CallbackInfo ci) {
+//        try {
+////            Connection self = (Connection) (Object) this;
+////            VegaFabric.vega.handleDisconnectedFromServer(disconnectionDetails, self);
+//        } catch (Throwable e) {
+//            Vega.getInstance().LOGGER.error(e.getMessage(), e);
+//        }
+//    }
 }

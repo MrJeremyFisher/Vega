@@ -1,6 +1,7 @@
 package ca.favro.vega.common.mixin.mixins;
 
 import ca.favro.vega.client.VegaFabric;
+import ca.favro.vega.common.Vega;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -20,7 +21,7 @@ public class PlayerListMixin {
     )
     protected void modifyDisplayName(PlayerInfo playerInfo, CallbackInfoReturnable<Component> cir) {
         try {
-            Component displayName = VegaFabric.vega.handleReplaceName(playerInfo.getTabListDisplayName(), playerInfo.getProfile().id());
+            Component displayName = Vega.getInstance().handleReplaceName(playerInfo.getTabListDisplayName(), playerInfo.getProfile().id());
             if (displayName != null) {
                 cir.setReturnValue(displayName);
             }

@@ -2,6 +2,7 @@ package ca.favro.vega.common.integrations.voxelmap;
 
 import ca.favro.vega.common.Vega;
 import ca.favro.vega.common.VegaUser;
+import ca.favro.vega.common.mixin.mixins.VoxelWaypointContainerAccessorMixin;
 import ca.favro.vega.common.mixin.mixins.VoxelWaypointManagerAccessorMixin;
 import ca.favro.vega.common.renderers.Utils;
 import com.mamiyaotaru.voxelmap.VoxelConstants;
@@ -20,20 +21,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class VoxelmapIntegration {
-    private Minecraft minecraft;
-    private Vega vega;
-    private Runnable syncRunnable;
+    private final Minecraft minecraft;
+    private final Vega vega;
+    private final Runnable syncRunnable;
     private ScheduledExecutorService scheduledExecutorService;
 
     public VoxelmapIntegration(Vega vega, Minecraft minecraft) {
         this.vega = vega;
         this.minecraft = minecraft;
-        syncRunnable = new Runnable() {
-            @Override
-            public void run() {
-                sync();
-            }
-        };
+        syncRunnable = this::sync;
         vega.LOGGER.info("Voxelmap integration enabled");
     }
 
@@ -51,13 +47,9 @@ public class VoxelmapIntegration {
     }
 
     public void sync() {
-        try {
-            VoxelWaypointManagerAccessorMixin voxelWaypointManager = ((VoxelWaypointManagerAccessorMixin)VoxelConstants.getVoxelMapInstance().getWaypointManager());
-            if (voxelWaypointManager != null) {
-                minecraft.execute(() -> voxelWaypointManager.getWaypointContainer().refreshRenderables());
-            }
-        } catch (Exception ignored) {
-
+        VoxelWaypointManagerAccessorMixin voxelWaypointManager = ((VoxelWaypointManagerAccessorMixin) VoxelConstants.getVoxelMapInstance().getWaypointManager());
+        if (voxelWaypointManager != null && ((VoxelWaypointContainerAccessorMixin) voxelWaypointManager.getWaypointContainer()).getWaypointManager() != null) {
+            minecraft.execute(() -> voxelWaypointManager.getWaypointContainer().refreshRenderables());
         }
     }
 
