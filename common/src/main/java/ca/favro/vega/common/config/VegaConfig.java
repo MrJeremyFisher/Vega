@@ -35,7 +35,7 @@ public class VegaConfig {
         config.receiveInfo = this.receiveInfo;
         config.showOnlyFocused = this.showOnlyFocused;
         config.showBeams = this.showBeams;
-        config.showNamePlates = this.showLocatorBar;
+        config.showNamePlates = this.showNamePlates;
         config.showLocatorBar = this.showLocatorBar;
         config.waypointKeepAge = this.waypointKeepAge;
         config.showOnMap = this.showOnMap;

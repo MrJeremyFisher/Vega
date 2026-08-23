@@ -34,6 +34,10 @@ public class VegaWaypointManager {
         this.waypoints.remove(trackedWaypoint.id());
     }
 
+    public void untrackWaypoint(UUID id) {
+        this.waypoints.remove(id);
+    }
+
     public void untrackAllWaypoints() {
         forEachWaypoint(this::untrackWaypoint);
     }

@@ -2,6 +2,7 @@ package ca.favro.vega.common.integrations.voxelmap;
 
 import ca.favro.vega.common.Vega;
 import ca.favro.vega.common.VegaUser;
+import ca.favro.vega.common.mixin.mixins.VoxelWaypointManagerAccessorMixin;
 import ca.favro.vega.common.renderers.Utils;
 import com.mamiyaotaru.voxelmap.VoxelConstants;
 import com.mamiyaotaru.voxelmap.WaypointManager;
@@ -17,14 +18,12 @@ import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class VoxelmapIntegration {
     private Minecraft minecraft;
     private Vega vega;
     private Runnable syncRunnable;
     private ScheduledExecutorService scheduledExecutorService;
-    private ArrayList<Waypoint> trackedPts = new ArrayList<>();
 
     public VoxelmapIntegration(Vega vega, Minecraft minecraft) {
         this.vega = vega;
@@ -46,50 +45,37 @@ public class VoxelmapIntegration {
     }
 
     public void stop() {
-        clearManagedWaypoints();
         if (scheduledExecutorService != null) {
             scheduledExecutorService.close();
         }
     }
 
-    public void clearManagedWaypoints() {
-        minecraft.execute(() -> {
-            WaypointManager voxelWaypointManager = VoxelConstants.getVoxelMapInstance().getWaypointManager();
-            for (Waypoint waypoint :
-                    voxelWaypointManager.getWaypoints().stream().filter(waypoint ->
-                            waypoint.name.startsWith("§v§e§g§a")).collect(Collectors.toSet())
-            ) {
-                // Removing this way instead of straight from the list calls refreshRenderables so the waypoints disappear from the map
-                voxelWaypointManager.deleteWaypoint(waypoint);
+    public void sync() {
+        try {
+            VoxelWaypointManagerAccessorMixin voxelWaypointManager = ((VoxelWaypointManagerAccessorMixin)VoxelConstants.getVoxelMapInstance().getWaypointManager());
+            if (voxelWaypointManager != null) {
+                minecraft.execute(() -> voxelWaypointManager.getWaypointContainer().refreshRenderables());
             }
-        });
+        } catch (Exception ignored) {
+
+        }
     }
 
-    public void sync() {
+    public ArrayList<Waypoint> getExtraVoxelMapWaypoints() {
         if (!vega.config.isShowOnMap()) {
-            clearManagedWaypoints();
-            return;
+            return null;
         }
         Entity entity = Minecraft.getInstance().getCameraEntity();
         WaypointManager voxelWaypointManager = VoxelConstants.getVoxelMapInstance().getWaypointManager();
-        if (voxelWaypointManager == null || minecraft.level == null) return;
+        if (voxelWaypointManager == null || minecraft.level == null) return null;
         TreeSet<DimensionContainer> dimensions = new TreeSet<>();
         dimensions.add(VoxelConstants.getVoxelMapInstance().getDimensionManager().getDimensionContainerByWorld(VoxelConstants.getPlayer().level()));
-        if (entity == null) return;
-        minecraft.execute(() -> sync(voxelWaypointManager, entity, dimensions));
-    }
-
-    private void sync(WaypointManager voxelWaypointManager, Entity entity, TreeSet<DimensionContainer> dimensions) {
-        for (Waypoint waypoint : trackedPts) {
-            voxelWaypointManager.deleteWaypoint(waypoint);
-        }
-        trackedPts.clear();
-
-        // TODO: maybe hide these in the waypoint list so they don't add clutter
+        if (entity == null) return null;
+        ArrayList<Waypoint> trackedPts = new ArrayList<>();
         vega.getVegaWaypointManager().forEachWaypoint(vegaPlayerWaypoint -> {
-            // TODO I do this check a lot. Make it a method
             if (!vegaPlayerWaypoint.id().equals(entity.getUUID())
                     && (((Instant.now().toEpochMilli() - vegaPlayerWaypoint.getDateAdded()) / (3.6 * Math.pow(10, 6))) < vega.config.getWaypointKeepAge())) {
+
                 Vec3 position = vegaPlayerWaypoint.position();
                 VegaUser vegaUser = vega.getVegaUsers().get(vegaPlayerWaypoint.id());
                 int color = 0xFFFFFFFF;
@@ -98,7 +84,7 @@ public class VoxelmapIntegration {
                 }
                 String ts = Utils.getWaypointTimeString(vegaPlayerWaypoint);
                 Waypoint waypoint = new Waypoint(
-                        "§v§e§g§a§r " + vegaPlayerWaypoint.getName() + ts,
+                        vegaPlayerWaypoint.getName() + ts,
                         (int) position.x,
                         (int) position.z,
                         (int) position.y,
@@ -115,9 +101,12 @@ public class VoxelmapIntegration {
                         vegaPlayerWaypoint.getWorld(),
                         dimensions
                 );
-                voxelWaypointManager.addWaypoint(waypoint);
-                trackedPts.add(waypoint);
+                trackedPts.add(
+                        waypoint
+                );
             }
         }, minecraft.level.dimension().identifier().getPath());
+
+        return trackedPts;
     }
 }

@@ -8,26 +8,16 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
-import net.fabricmc.loader.impl.launch.FabricLauncherBase;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.file.Paths;
-
 public class VegaFabric implements ClientModInitializer {
     public static final String MOD_ID = "vega";
-    public static final String MOD_LOADER_VERSION = "1.0.2-1.21.11-ALPHA";
-    public static final Logger LOGGER = new VegaLogger(VegaFabric.class);
+    public static final String MOD_LOADER_VERSION = "1.0.0-1.21.11";
+    public static final Logger LOGGER = VegaFabricPL.LOGGER;
     private final KeyMapping.Category keyCategory = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("vega", "keycategory"));
     private final KeyMapping renderKey = new KeyMapping("Toggle Vega Renderers", GLFW.GLFW_KEY_PERIOD, keyCategory);
     private final KeyMapping listKey = new KeyMapping("Vega Player List", GLFW.GLFW_KEY_SEMICOLON, keyCategory);
@@ -62,41 +52,9 @@ public class VegaFabric implements ClientModInitializer {
 
     private void init() {
         try {
-            File gameDirectory = Minecraft.getInstance().gameDirectory;
-            File jarDir = new File(gameDirectory, "/vega/");
-            if (!jarDir.isDirectory())
-                jarDir.mkdir();
-
-            BufferedInputStream bufferedInputStream = null;
-            try {
-                URL url = URI.create("https://wss.ve3jfo.ca/jars/common.jar").toURL();
-                LOGGER.info("Downloading Vega client JAR");
-                URLConnection urlConnection = url.openConnection();
-                bufferedInputStream = new BufferedInputStream(urlConnection.getInputStream());
-
-                File jarFile = new File(jarDir.getPath() + "/vega-client.jar");
-                if (jarFile.exists()) {
-                    jarFile.delete();
-                }
-
-                FileOutputStream fileOutputStream = new FileOutputStream(jarFile);
-                bufferedInputStream.transferTo(fileOutputStream);
-                fileOutputStream.flush();
-                fileOutputStream.close();
-
-                // TODO REMOVE IN PROD
-                jarFile = new File("/home/jeremy/Documents/Vega api-impl split/Vega/common/build/libs/common.jar");
-                // TODO
-
-                FabricLauncherBase.getLauncher().addToClassPath(Paths.get(jarFile.getAbsolutePath()));
-                LOGGER.info("Vega client JAR on classpath");
-            } finally {
-                if (bufferedInputStream != null) {
-                    bufferedInputStream.close();
-                }
-            }
-
-            vega = (IVega) this.getClass().getClassLoader().loadClass("ca.favro.vega.common.Vega").getDeclaredConstructor(KeyMapping.class, KeyMapping.class, KeyMapping.class, Logger.class).newInstance(renderKey, listKey, settingsKey, LOGGER);
+            vega = (IVega) this.getClass().getClassLoader().loadClass("ca.favro.vega.common.Vega")
+                    .getDeclaredConstructor(KeyMapping.class, KeyMapping.class, KeyMapping.class, Logger.class)
+                    .newInstance(renderKey, listKey, settingsKey, LOGGER);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

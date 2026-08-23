@@ -12,16 +12,13 @@
   "icon": "icon.png",
   "environment": "client",
   "entrypoints": {
+    "preLaunch": [
+      "ca.favro.vega.client.VegaFabricPL"
+    ],
     "client": [
       "ca.favro.vega.client.VegaFabric"
     ]
   },
-  "mixins": [
-    {
-      "config": "vega.client.mixins.json",
-      "environment": "client"
-    }
-  ],
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",

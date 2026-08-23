@@ -50,7 +50,7 @@ public class VegaPlayerList extends ContainerObjectSelectionList<VegaPlayerEntry
     }
 
     public void updatePlayerList(Collection<UUID> collection, double d, boolean bl) {
-        Map<UUID, VegaPlayerEntry> map = new HashMap();
+        Map<UUID, VegaPlayerEntry> map = new HashMap<>();
         this.addOnlinePlayers(collection, map);
 //        this.updatePlayersFromChatLog(map, bl);
         this.updateFiltersAndScroll(map.values(), d);

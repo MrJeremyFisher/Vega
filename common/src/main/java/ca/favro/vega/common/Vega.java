@@ -29,9 +29,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.data.AtlasIds;
 import net.minecraft.network.Connection;
 import net.minecraft.network.DisconnectionDetails;
-import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
@@ -48,7 +48,6 @@ import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.text.MessageFormat;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -66,7 +65,7 @@ import java.util.stream.Collectors;
 
 public final class Vega implements IVega {
     public static final String MOD_ID = "vega";
-    private static final String MOD_VERSION = "1.0.4-1.21.11-ALPHA";
+    private static final String MOD_VERSION = "1.0.0-1.21.11";
     public final Logger LOGGER;
     private static Vega instance = null;
     private String serverHash;
@@ -94,6 +93,18 @@ public final class Vega implements IVega {
     private VoxelmapIntegration voxelmapIntegration;
     private boolean journeymapEnabled;
     private JourneymapIntegration journeymapIntegration;
+    private final IconToast connectedToast = new IconToast(
+            Component.literal("Connected"),
+            Component.literal("Connected to Vega server"),
+            Identifier.withDefaultNamespace("icon/link"),
+            2000L
+    );
+    private final IconToast disconnectedToast = new IconToast(
+            Component.literal("Disconnected"),
+            Component.literal("Disconnected from Vega server"),
+            Identifier.withDefaultNamespace("player_list/remove_player"),
+            10000L
+    );
 
     private final boolean xaerosmapEnabled;
     private XaeroMinimapIntegration xaeroMinimapIntegration;
@@ -124,24 +135,19 @@ public final class Vega implements IVega {
     }
 
     public static void popOpenToast() {
-        Minecraft.getInstance().getToastManager().addToast(
-                new IconToast(
-                        Component.literal("Connected to Vega server!"),
-                        CommonComponents.EMPTY,
-                        Identifier.withDefaultNamespace("icon/link"),
-                        2000L
-                ));
-        // TODO clear disconnect toast
+        // TODO remove disconnected toast
+        Minecraft.getInstance().execute(() -> Minecraft.getInstance().player.displayClientMessage(Component.literal("[Vega] Connected to Vega server"), false));
+        // TODO reenable when I figure out nineslice
+//        Minecraft.getInstance().getToastManager().addToast(
+//                getInstance().connectedToast
+//        );
     }
 
     public static void popCloseToast() {
-        Minecraft.getInstance().getToastManager().addToast(
-                new IconToast(
-                        Component.literal("Disconnect from Vega server!"),
-                        CommonComponents.EMPTY,
-                        Identifier.withDefaultNamespace("player_list/remove_player"),
-                        10000L
-                ));
+        Minecraft.getInstance().execute(() -> Minecraft.getInstance().player.displayClientMessage(Component.literal("[Vega] Disconnected from Vega server"), false));
+//        Minecraft.getInstance().getToastManager().addToast(
+//                getInstance().disconnectedToast
+//        );
     }
 
     public Map<UUID, VegaUser> getVegaUsers() {
@@ -194,7 +200,6 @@ public final class Vega implements IVega {
                 for (VegaPlayer player : trackedPlayers.values().stream().filter(
                         player -> player.source() != VegaPlayer.Source.LOCAL || !Objects.equals(player.name(), Minecraft.getInstance().player.getGameProfile().name())
                 ).collect(Collectors.toSet())
-
                 ) {
                     if (webSocket != null && config.isSendInfo()) {
                         webSocket.sendText("?player=" + gson.toJson(player), true);
@@ -202,7 +207,7 @@ public final class Vega implements IVega {
                 }
 
                 // We sync snitch hits separately as when we have someone in render range that overrides the snitch hits locally and so won't share it
-                // to other users
+                // to other users. Times in the hits will handle syncing them on other clients
                 for (UUID snitchAlertUUID : queuedSnitchAlerts.keySet()) {
                     SnitchAlert sa = queuedSnitchAlerts.get(snitchAlertUUID);
                     if (webSocket != null && config.isSendInfo()) {
@@ -222,10 +227,8 @@ public final class Vega implements IVega {
     }
 
     public void handleConnectToServer(ClientPacketListener clientPacketListener) {
-        // TODO check connection type?
         String addr = clientPacketListener.getConnection().getRemoteAddress().toString();
         if (addr.contains("23.163.152.211") || addr.contains("play.civmc.net")) {
-            LOGGER.debug("Connected to server");
             tryWSConnection();
             playerSenderRunner = Executors.newScheduledThreadPool(1);
             playerSenderRunner.scheduleAtFixedRate(playerSender, 0, 3, TimeUnit.SECONDS);
@@ -236,7 +239,6 @@ public final class Vega implements IVega {
 
     @Override
     public void handleDisconnectedFromServer(DisconnectionDetails disconnectionDetails, Connection self) {
-        // TODO check connection type? - I think only needed when using the mixin which fires a bunch. For now we'll use the fabric event.
         if (playerSenderRunner != null) {
             playerSenderRunner.close();
         }
@@ -247,12 +249,7 @@ public final class Vega implements IVega {
         vegaWaypointManager.untrackAllWaypoints();
 
         if (webSocket != null) {
-            webSocket.sendClose(400, "Client disconnected");
-            webSocket.abort();
-        }
-
-        if (voxelmapEnabled) {
-            voxelmapIntegration.stop();
+            webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Client shutting down");
         }
     }
 
@@ -269,6 +266,17 @@ public final class Vega implements IVega {
         Vec3 pos = player.position();
         Entity e = Minecraft.getInstance().getCameraEntity();
         pos = new Vec3(pos.x, e == null ? 64 : e.getY(), pos.z);
+//        Optional<Map.Entry<UUID, VegaPlayer>> duplicate = trackedPlayers.entrySet().stream().filter(
+//                entry ->
+//                        entry.getValue().name().equals(player.getName().getString())
+//                                && !entry.getKey().equals(player.getUUID())
+//        ).findFirst();
+//        // Clear combat logger waypoints
+//        if (duplicate.isPresent()) {
+//            Map.Entry<UUID, VegaPlayer> duplicateF = duplicate.get();
+//            trackedPlayers.remove(duplicateF.getKey());
+//            vegaWaypointManager.untrackWaypoint(duplicateF.getKey());
+//        }
         trackedPlayers.put(player.getUUID(),
                 new VegaPlayer(player.getName().getString(),
                         player.getUUID(),
@@ -282,7 +290,8 @@ public final class Vega implements IVega {
     }
 
     public void handleScreenshot(File gameDirectory, RenderTarget renderTarget, Consumer<Component> messageConsumer) {
-
+        // TODO: To censor info, disable all Vega rendering (incl. map wps), render one frame, save that frame as the screenshot,
+        // TODO: cancel the original screenshot
     }
 
     public void receiveRemotePlayer(VegaPlayer receivedPlayer) {
@@ -358,7 +367,8 @@ public final class Vega implements IVega {
                 if (trackedPlayers.containsKey(uuid)) {
                     VegaPlayer p = trackedPlayers.get(uuid);
                     // Prefer local waypoints over snitch hits to avoid the waypoint jumping around
-                    if (((Instant.now().toEpochMilli() - p.time()) / 1000) > 2 && p.source() != VegaPlayer.Source.LOCAL) {
+                    boolean isOld = (Instant.now().toEpochMilli() - p.time() / 1000) > 5;
+                    if (p.source() != VegaPlayer.Source.LOCAL || isOld) {
                         handleSnitch(snitchAlert, uuid);
                     }
                 } else {
@@ -386,7 +396,6 @@ public final class Vega implements IVega {
     public boolean handlePacketSending(Packet<?> packet) {
         if (packet instanceof ServerboundPlayerLoadedPacket splp) {
             if (this.voxelmapEnabled) {
-                voxelmapIntegration.clearManagedWaypoints();
                 voxelmapIntegration.start();
             }
             if (this.xaerosmapEnabled) {
@@ -445,12 +454,16 @@ public final class Vega implements IVega {
         return trackedPlayers;
     }
 
+    public VoxelmapIntegration getVoxelmapIntegration() {
+        return voxelmapIntegration;
+    }
+
     public void tryWSConnection() {
         String url = config.getWssURL();
         if (!url.endsWith("/")) {
             url += "/";
         }
-        String connectionURL = MessageFormat.format(url + "?serverId={0}&username={1}", this.serverHash, Minecraft.getInstance().player.getName().getString());
+        String connectionURL = MessageFormat.format("{0}?serverId={1}&username={2}", url, this.serverHash, Minecraft.getInstance().player.getName().getString());
         try {
             webSocket = HttpClient
                     .newHttpClient()

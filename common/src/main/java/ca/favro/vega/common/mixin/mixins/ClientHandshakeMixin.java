@@ -1,4 +1,4 @@
-package ca.favro.vega.client.mixin;
+package ca.favro.vega.common.mixin.mixins;
 
 import ca.favro.vega.client.IVega;
 import ca.favro.vega.client.VegaFabric;

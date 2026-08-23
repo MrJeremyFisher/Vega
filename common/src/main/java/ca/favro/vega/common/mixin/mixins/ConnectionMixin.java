@@ -1,4 +1,4 @@
-package ca.favro.vega.client.mixin;
+package ca.favro.vega.common.mixin.mixins;
 
 import ca.favro.vega.client.VegaFabric;
 import io.netty.channel.ChannelFutureListener;
@@ -14,9 +14,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin({Connection.class})
 public class ConnectionMixin {
-    public ConnectionMixin() {
-    }
-
     @Inject(
             at = {@At("HEAD")},
             method = {"send(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;)V"},

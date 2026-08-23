@@ -1,4 +1,4 @@
-package ca.favro.vega.client.mixin;
+package ca.favro.vega.common.mixin.mixins;
 
 import ca.favro.vega.client.VegaFabric;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -15,7 +15,6 @@ import java.util.function.Consumer;
 
 @Mixin({Screenshot.class})
 public class ScreenshotMixin {
-
     @Inject(
             method = {"grab(Ljava/io/File;Ljava/lang/String;Lcom/mojang/blaze3d/pipeline/RenderTarget;ILjava/util/function/Consumer;)V"},
             at = {@At("HEAD")}

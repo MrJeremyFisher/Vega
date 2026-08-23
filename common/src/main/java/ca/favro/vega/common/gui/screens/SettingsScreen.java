@@ -11,6 +11,7 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 
 import java.awt.Color;
+import java.net.http.WebSocket;
 
 public class SettingsScreen extends Screen {
     private final Screen parent;
@@ -54,7 +55,7 @@ public class SettingsScreen extends Screen {
 
         addRenderableWidget(Button.builder(Component.literal("Disconnect"), (btn) -> {
             if (vega.getWebSocket() != null) {
-                vega.getWebSocket().sendClose(400, "User disconnect");
+                vega.getWebSocket().sendClose(WebSocket.NORMAL_CLOSURE, "User disconnect");
             }
         }).bounds(x + 101, y, 100, 20).build());
 

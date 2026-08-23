@@ -1,4 +1,4 @@
-package ca.favro.vega.client.mixin;
+package ca.favro.vega.common.mixin.mixins;
 
 import ca.favro.vega.client.VegaFabric;
 import net.minecraft.world.entity.player.Player;
@@ -13,7 +13,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(TransientEntitySectionManager.class)
 public class TransientEntitySectionManagerMixin {
-
     @Inject(at = @At("TAIL"), method = "addEntity")
     public void addEntity(EntityAccess entity, CallbackInfo ci) {
         if (!entity.isAlwaysTicking() || VegaFabric.vega == null) { // Only players are alwaysTicking

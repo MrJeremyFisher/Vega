@@ -1,12 +1,16 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "ca.favro.vega.client.mixin",
+  "package": "ca.favro.vega.common.mixin.mixins",
   "compatibilityLevel": "JAVA_21",
+  "plugin": "ca.favro.vega.common.mixin.MixinLoader",
   "client": [
     "ClientHandshakeMixin",
     "ConnectionMixin",
     "PlayerListMixin",
+    "PlayerEntityMixin",
+    "VoxelMixin",
+    "VoxelWaypointManagerAccessorMixin",
     "ScreenshotMixin",
     "TransientEntitySectionManagerMixin",
     "TransientEntitySectionManagerMixin$ListenerMixin"
@@ -16,8 +20,5 @@
   },
   "overwrites": {
     "requireAnnotations": true
-  },
-  "mixins": [
-    "PlayerEntityMixin"
-  ]
+  }
 }
