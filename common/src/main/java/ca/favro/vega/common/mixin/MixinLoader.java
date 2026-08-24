@@ -22,8 +22,14 @@ public class MixinLoader implements IMixinConfigPlugin {
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         // TODO: Think up a better way to do this lol
-        return switch (mixinClassName) {
-            case "VoxelMixin", "VoxelWaypointManagerAccessorMixin" -> FabricLoader.getInstance().isModLoaded("voxelmap");
+        return switch (mixinClassName.substring(34)) {
+            case "VoxelMixin",
+                 "VoxelWaypointManagerAccessor",
+                 "VoxelWaypointContainerAccessor" -> FabricLoader.getInstance().isModLoaded("voxelmap");
+            case "CivModernPlayerWaypointsMixin",
+                 "CivModernPlayerWaypointsAccessor",
+                 "CivModernMapScreenMixin",
+                 "CivModernMinimapMixin" -> FabricLoader.getInstance().isModLoaded("civmodern");
             default -> true;
         };
     }

@@ -29,6 +29,7 @@ import net.minecraft.world.entity.player.PlayerSkin;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -208,16 +209,16 @@ public class VegaPlayerEntry extends ContainerObjectSelectionList.Entry<VegaPlay
 
         boolean isFocused = vega.getFocusedPlayers().contains(getPlayerId());
 
-        String subString = "";
-        if (isFocused) subString += "(Focused)";
+        StringJoiner subString = new StringJoiner(" ");
+        if (isFocused) subString.add("(Focused)");
         if (isOnline) {
             guiGraphics.fill(this.getContentX(), this.getContentY(), this.getContentRight(), this.getContentBottom(), BG_FILL);
             if (isFocused) {
-                guiGraphics.drawString(this.minecraft.font, Component.literal(subString), m, n + 12, PLAYER_STATUS_COLOR);
+                guiGraphics.drawString(this.minecraft.font, Component.literal(subString.toString()), m, n + 12, PLAYER_STATUS_COLOR);
             }
         } else {
             guiGraphics.fill(this.getContentX(), this.getContentY(), this.getContentRight(), this.getContentBottom(), BG_FILL_REMOVED);
-            guiGraphics.drawString(this.minecraft.font, Component.literal(subString + "(Offline)"), m, n + 12, PLAYER_STATUS_COLOR);
+            guiGraphics.drawString(this.minecraft.font, Component.literal(subString.add("(Offline)").toString()), m, n + 12, PLAYER_STATUS_COLOR);
         }
 
         PlayerFaceRenderer.draw(guiGraphics, this.skinGetter.get(), k, l, 24);
@@ -232,7 +233,7 @@ public class VegaPlayerEntry extends ContainerObjectSelectionList.Entry<VegaPlay
             name = name.copy().withStyle(ChatFormatting.BOLD);
         }
 
-        guiGraphics.drawString(this.minecraft.font, name, m, n,0xFFFFFFFF);
+        guiGraphics.drawString(this.minecraft.font, name, m, n, 0xFFFFFFFF);
         if (!this.isOnline) {
             guiGraphics.fill(k, l, k + 24, l + 24, SKIN_SHADE);
         }

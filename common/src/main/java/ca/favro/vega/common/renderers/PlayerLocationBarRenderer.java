@@ -21,6 +21,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.waypoints.Waypoint;
 
 import java.time.Instant;
+import java.util.Objects;
 
 import static ca.favro.vega.common.renderers.Utils.status2Color;
 
@@ -63,7 +64,8 @@ public class PlayerLocationBarRenderer implements ContextualBarRenderer {
                                 extracted(guiGraphics, trackedWaypoint, entity, i);
                             }
                         }
-                    }, minecraft.level.dimension().identifier().getPath()
+                    }, vegaPlayerWaypoint -> minecraft.level.dimension().identifier().getPath().equals(vegaPlayerWaypoint.getWorld())
+                            && Objects.equals(vega.getCurrentServerString(), vegaPlayerWaypoint.getServer())
             );
         }
     }

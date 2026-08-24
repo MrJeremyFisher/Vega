@@ -19,6 +19,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
 import java.time.Instant;
+import java.util.Objects;
 
 import static ca.favro.vega.common.renderers.Utils.status2Color;
 
@@ -46,7 +47,8 @@ public class PlayerLocationBeamRenderer {
                     if (vega.config.isShowNamePlates()) renderSign(poseStack, multiBufferSource, vpw);
                 }
             }
-        }, minecraft.level.dimension().identifier().getPath());
+        }, vegaPlayerWaypoint -> minecraft.level.dimension().identifier().getPath().equals(vegaPlayerWaypoint.getWorld())
+                && Objects.equals(vega.getCurrentServerString(), vegaPlayerWaypoint.getServer()));
         MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
         buffers.endBatch();
     }

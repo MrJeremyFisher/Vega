@@ -5,8 +5,13 @@ import ca.favro.vega.common.VegaUser;
 import ca.favro.vega.common.waypoint.VegaPlayer;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import net.fabricmc.loader.impl.FabricLoaderImpl;
 import org.slf4j.Logger;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
@@ -39,8 +44,8 @@ public class VegaWebsocketHandler implements WebSocket.Listener {
 
     @Override
     public CompletionStage<?> onClose(WebSocket webSocket,
-                                       int statusCode,
-                                       String reason) {
+                                      int statusCode,
+                                      String reason) {
         Vega.popCloseToast();
         String ret = String.format("Websocket connection closed with code %s,", statusCode);
         if (reason != null && !reason.isBlank()) {
@@ -95,6 +100,18 @@ public class VegaWebsocketHandler implements WebSocket.Listener {
                 } catch (JsonSyntaxException e) {
                     LOGGER.error("Error deserializing user update", e);
                 }
+            } else if (incomingQuery[0].equals("token")) {
+                File tokenFile = new File(FabricLoaderImpl.INSTANCE.getGameDir().toFile(), "/vega/token");
+
+                FileOutputStream fileOutputStream;
+                try {
+                    fileOutputStream = new FileOutputStream(tokenFile);
+                    fileOutputStream.write(incomingQuery[1].getBytes());
+                    fileOutputStream.flush();
+                    fileOutputStream.close();
+                } catch (Exception e) {
+                    LOGGER.error(e.getMessage(), e);
+                }
             } else {
                 LOGGER.warn("Received unknown packet:\n {}", incoming);
             }
@@ -104,7 +121,7 @@ public class VegaWebsocketHandler implements WebSocket.Listener {
 
     @Override
     public CompletionStage<?> onPing(WebSocket webSocket,
-                                      ByteBuffer message) {
+                                     ByteBuffer message) {
         webSocket.sendPong(message);
         return WebSocket.Listener.super.onPing(webSocket, message);
     }

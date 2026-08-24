@@ -6,13 +6,13 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(
-        value = {WaypointManager.class},
+        value = WaypointContainer.class,
         remap = false
 )
-public interface VoxelWaypointManagerAccessorMixin {
+public interface VoxelWaypointContainerAccessor {
     @Accessor(
-            value = "waypointContainer",
+            value = "waypointManager",
             remap = false
     )
-    WaypointContainer getWaypointContainer();
+    WaypointManager getWaypointManager();
 }

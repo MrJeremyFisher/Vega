@@ -10,11 +10,16 @@
     "PlayerListMixin",
     "PlayerEntityMixin",
     "VoxelMixin",
-    "VoxelWaypointManagerAccessorMixin",
+    "VoxelWaypointManagerAccessor",
     "ScreenshotMixin",
     "TransientEntitySectionManagerMixin",
     "TransientEntitySectionManagerMixin$ListenerMixin",
-    "VoxelWaypointContainerAccessorMixin"
+    "VoxelWaypointContainerAccessor",
+    "TablistAccessorMixin",
+    "CivModernPlayerWaypointsMixin",
+    "CivModernPlayerWaypointsAccessor",
+    "CivModernMapScreenMixin",
+    "CivModernMinimapMixin"
   ],
   "injectors": {
     "defaultRequire": 1

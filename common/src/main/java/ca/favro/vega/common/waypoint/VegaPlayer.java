@@ -12,7 +12,7 @@ import net.minecraft.world.phys.Vec3;
 import java.lang.reflect.Type;
 import java.util.UUID;
 
-public record VegaPlayer(String name, UUID uuid, Vec3 position, String world, long time, Source source) {
+public record VegaPlayer(String name, UUID uuid, Vec3 position, String world, String server, long time, Source source) {
 
     public static class VegaPlayerSerializer implements JsonSerializer<VegaPlayer> {
         @Override
@@ -27,6 +27,7 @@ public record VegaPlayer(String name, UUID uuid, Vec3 position, String world, lo
             position.addProperty("y", src.position.y);
             position.addProperty("z", src.position.z);
             position.addProperty("world", src.world);
+            position.addProperty("server", src.server);
             obj.add("position", position);
 
             return obj;
@@ -46,13 +47,13 @@ public record VegaPlayer(String name, UUID uuid, Vec3 position, String world, lo
                     positionObject.get("z").getAsDouble()
             );
             String world = positionObject.get("world").getAsString();
+            String server = positionObject.get("server").getAsString();
             long time = json.getAsJsonObject().get("time").getAsLong();
 
             // Only time deserialized is when coming from remote
-            return new VegaPlayer(name, uuid, position, world, time, Source.REMOTE);
+            return new VegaPlayer(name, uuid, position, world, server, time, Source.REMOTE);
         }
     }
-
 
     public enum Source {
         LOCAL, // Waypoint comes from an entity in view distance. Should not be shared unless the waypoint is for the local player

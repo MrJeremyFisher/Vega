@@ -15,14 +15,15 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class JourneymapIntegration {
-    private Minecraft minecraft;
-    private Vega vega;
-    private Runnable syncRunnable;
+    private final Minecraft minecraft;
+    private final Vega vega;
+    private final Runnable syncRunnable;
     private ScheduledExecutorService scheduledExecutorService;
 
     public JourneymapIntegration(Vega vega, Minecraft minecraft) {
@@ -81,7 +82,7 @@ public class JourneymapIntegration {
                 Waypoint waypoint = WaypointFactory.createWaypoint(
                         Vega.MOD_ID,
                         new BlockPos(new Vec3i((int) position.x, (int) position.y, (int) position.z)),
-                        "§v§e§g§a§r " + vegaPlayerWaypoint.getName() + ts,
+                        vegaPlayerWaypoint.getName() + ts,
                         switch (vegaPlayerWaypoint.getWorld()) {
                             case "overworld":
                                 yield Level.OVERWORLD;
@@ -111,6 +112,7 @@ public class JourneymapIntegration {
                 ClientAPI.INSTANCE.addWaypoint(Vega.MOD_ID, waypoint);
                 WaypointGroupStore.getInstance().get(WaypointGroupStore.TEMP.getGuid()).addWaypoint(waypoint);
             }
-        }, minecraft.level.dimension().identifier().getPath());
+        }, vegaPlayerWaypoint -> minecraft.level.dimension().identifier().getPath().equals(vegaPlayerWaypoint.getWorld())
+                && Objects.equals(vega.getCurrentServerString(), vegaPlayerWaypoint.getServer()));
     }
 }

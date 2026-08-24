@@ -14,12 +14,14 @@ public class VegaPlayerWaypoint implements Waypoint {
     private UUID identifier;
     private Vec3 vector;
     private String world;
+    private String server;
     private long dateAdded;
     private Icon icon;
 
-    public VegaPlayerWaypoint(UUID uuid, String world, Icon icon, Vec3 vector) {
+    public VegaPlayerWaypoint(UUID uuid, String world, String server, Icon icon, Vec3 vector) {
         this.vector = vector;
         this.world = world;
+        this.server = server;
         this.identifier = uuid;
         this.icon = icon;
         this.dateAdded = Instant.now().toEpochMilli();
@@ -29,6 +31,7 @@ public class VegaPlayerWaypoint implements Waypoint {
         this.name = vegaPlayerWaypoint.name;
         this.identifier = vegaPlayerWaypoint.identifier;
         this.world = vegaPlayerWaypoint.world;
+        this.server = vegaPlayerWaypoint.server;
         this.icon = vegaPlayerWaypoint.icon;
         this.vector = vegaPlayerWaypoint.vector;
         this.dateAdded = vegaPlayerWaypoint.dateAdded;
@@ -37,6 +40,7 @@ public class VegaPlayerWaypoint implements Waypoint {
     public VegaPlayerWaypoint(VegaPlayer vp) {
         this.vector = vp.position();
         this.world = vp.world();
+        this.server = vp.server();
         this.identifier = vp.uuid();
         this.name = vp.name();
         this.icon = new VegaWaypointIcon();
@@ -107,6 +111,10 @@ public class VegaPlayerWaypoint implements Waypoint {
 
     public void setWorld(String world) {
         this.world = world;
+    }
+
+    public String getServer() {
+        return server;
     }
 
     public long getDateAdded() {

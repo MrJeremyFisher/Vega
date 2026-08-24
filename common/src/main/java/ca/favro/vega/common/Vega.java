@@ -5,10 +5,12 @@ import ca.favro.vega.common.config.VegaConfig;
 import ca.favro.vega.common.gui.components.IconToast;
 import ca.favro.vega.common.gui.screens.SettingsScreen;
 import ca.favro.vega.common.gui.screens.VegaPlayerScreen;
+import ca.favro.vega.common.integrations.civmodern.CivModernIntegration;
 import ca.favro.vega.common.integrations.combatradar.CombatRadarIntegration;
 import ca.favro.vega.common.integrations.journeymap.JourneymapIntegration;
 import ca.favro.vega.common.integrations.voxelmap.VoxelmapIntegration;
 import ca.favro.vega.common.integrations.xaero.XaeroMinimapIntegration;
+import ca.favro.vega.common.mixin.mixins.TablistAccessorMixin;
 import ca.favro.vega.common.renderers.PlayerLocationBarRenderer;
 import ca.favro.vega.common.renderers.PlayerLocationBeamRenderer;
 import ca.favro.vega.common.renderers.Utils;
@@ -22,6 +24,7 @@ import com.google.gson.GsonBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.impl.FabricLoaderImpl;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -42,6 +45,7 @@ import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
@@ -92,6 +96,8 @@ public final class Vega implements IVega {
     private VoxelmapIntegration voxelmapIntegration;
     private final boolean journeymapEnabled;
     private JourneymapIntegration journeymapIntegration;
+    private final boolean civmodernEnabled;
+    private CivModernIntegration civModernIntegration;
     private final IconToast connectedToast = new IconToast(
             Component.literal("Connected"),
             Component.literal("Connected to Vega server"),
@@ -122,6 +128,7 @@ public final class Vega implements IVega {
         this.voxelmapEnabled = FabricLoader.getInstance().isModLoaded("voxelmap");
         this.xaerosmapEnabled = FabricLoader.getInstance().isModLoaded("xaerominimap");
         this.journeymapEnabled = FabricLoader.getInstance().isModLoaded("journeymap");
+        this.civmodernEnabled = FabricLoader.getInstance().isModLoaded("civmodern");
         if (voxelmapEnabled) {
             voxelmapIntegration = new VoxelmapIntegration(this, Minecraft.getInstance());
         }
@@ -130,6 +137,9 @@ public final class Vega implements IVega {
         }
         if (journeymapEnabled) {
             journeymapIntegration = new JourneymapIntegration(this, Minecraft.getInstance());
+        }
+        if (civmodernEnabled) {
+            civModernIntegration = new CivModernIntegration(this, Minecraft.getInstance());
         }
     }
 
@@ -216,8 +226,9 @@ public final class Vega implements IVega {
                 for (UUID snitchAlertUUID : queuedSnitchAlerts.keySet()) {
                     SnitchAlert sa = queuedSnitchAlerts.get(snitchAlertUUID);
                     if (webSocket != null && config.isSendInfo()) {
+                        // TODO can you get hits from Zorweth on main? If so, filter on that
                         webSocket.sendText("?player=" + gson.toJson(new VegaPlayer(
-                                sa.accountName, snitchAlertUUID, sa.pos, sa.world, sa.ts, VegaPlayer.Source.SNITCH
+                                sa.accountName, snitchAlertUUID, sa.pos, sa.world, getCurrentServerString(), sa.ts, VegaPlayer.Source.SNITCH
                         )), true);
                     }
                 }
@@ -232,13 +243,16 @@ public final class Vega implements IVega {
     }
 
     public void handleConnectToServer(ClientPacketListener clientPacketListener) {
-        String addr = clientPacketListener.getConnection().getRemoteAddress().toString();
-        if (addr.contains("23.163.152.211") || addr.contains("play.civmc.net")) {
-            tryWSConnection();
-            playerSenderRunner = Executors.newScheduledThreadPool(1);
-            playerSenderRunner.scheduleAtFixedRate(playerSender, 0, 3, TimeUnit.SECONDS);
-        } else {
-            handleDisconnectedFromServer(null, null);
+        // Only try if not already connected
+        if (webSocket == null || webSocket.isOutputClosed()) {
+            String addr = clientPacketListener.getConnection().getRemoteAddress().toString();
+            if (addr.contains("23.163.152.211") || addr.contains("play.civmc.net")) {
+                tryWSConnection();
+                playerSenderRunner = Executors.newScheduledThreadPool(1);
+                playerSenderRunner.scheduleAtFixedRate(playerSender, 0, 3, TimeUnit.SECONDS);
+            } else {
+                handleDisconnectedFromServer(null, null);
+            }
         }
     }
 
@@ -286,7 +300,7 @@ public final class Vega implements IVega {
                 new VegaPlayer(player.getName().getString(),
                         player.getUUID(),
                         pos,
-                        Minecraft.getInstance().level.dimension().identifier().getPath(),
+                        Minecraft.getInstance().level.dimension().identifier().getPath(), getCurrentServerString(),
                         System.currentTimeMillis(), VegaPlayer.Source.LOCAL)
         );
         vegaWaypointManager.trackOrUpdate(new VegaPlayerWaypoint(
@@ -305,7 +319,7 @@ public final class Vega implements IVega {
             receivedPlayer = new VegaPlayer(receivedPlayer.name(),
                     receivedPlayer.uuid(),
                     receivedPlayer.position(),
-                    matcher.group(1), receivedPlayer.time(), receivedPlayer.source());
+                    matcher.group(1), getCurrentServerString(), receivedPlayer.time(), receivedPlayer.source());
         }
 
         if (this.trackedPlayers.containsKey(receivedPlayer.uuid())) {
@@ -359,6 +373,7 @@ public final class Vega implements IVega {
     @Override
     public boolean handlePacketReceiving(Packet<?> packet) {
         if (packet instanceof ClientboundSystemChatPacket cscp) {
+            if (civmodernEnabled) return false;
             if (Minecraft.getInstance().level == null) return false;
             SnitchAlert snitchAlert = SnitchAlert.fromChat(cscp.content(), Minecraft.getInstance().level.dimension().identifier().getPath());
             if (snitchAlert == null || Minecraft.getInstance().player == null) return false;
@@ -386,7 +401,7 @@ public final class Vega implements IVega {
 
     private void handleSnitch(SnitchAlert snitchAlert, UUID uuid) {
         trackedPlayers.put(uuid, new VegaPlayer(
-                snitchAlert.accountName, uuid, snitchAlert.pos, snitchAlert.world, snitchAlert.ts, VegaPlayer.Source.SNITCH
+                snitchAlert.accountName, uuid, snitchAlert.pos, snitchAlert.world, getCurrentServerString(), snitchAlert.ts, VegaPlayer.Source.SNITCH
         ));
         vegaWaypointManager.trackOrUpdate(new VegaPlayerWaypoint(
                 trackedPlayers.get(uuid)
@@ -411,6 +426,10 @@ public final class Vega implements IVega {
                 journeymapIntegration.clearManagedWaypoints();
                 journeymapIntegration.start();
             }
+            if (this.civmodernEnabled) {
+                civModernIntegration.clearManagedWaypoints();
+                civModernIntegration.start();
+            }
         }
         return false;
     }
@@ -425,6 +444,9 @@ public final class Vega implements IVega {
         if (this.journeymapEnabled) {
             journeymapIntegration.stop();
         }
+        if (this.civmodernEnabled) {
+            civModernIntegration.stop();
+        }
     }
 
     public void startMap() {
@@ -437,6 +459,9 @@ public final class Vega implements IVega {
         if (this.journeymapEnabled) {
             journeymapIntegration.start();
         }
+        if (this.civmodernEnabled) {
+            civModernIntegration.start();
+        }
     }
 
     public void syncMaps() {
@@ -448,6 +473,9 @@ public final class Vega implements IVega {
         }
         if (this.journeymapEnabled) {
             journeymapIntegration.sync();
+        }
+        if (this.civmodernEnabled) {
+            civModernIntegration.sync();
         }
     }
 
@@ -468,7 +496,27 @@ public final class Vega implements IVega {
         if (!url.endsWith("/")) {
             url += "/";
         }
-        String connectionURL = MessageFormat.format("{0}?serverId={1}&username={2}", url, this.serverHash, Minecraft.getInstance().player.getName().getString());
+        File tokenFile = new File(FabricLoaderImpl.INSTANCE.getGameDir().toFile(), "/vega/token");
+        FileInputStream fileInputStream;
+        String token = "";
+        if (tokenFile.exists()) {
+            try {
+                fileInputStream = new FileInputStream(tokenFile);
+                token = new String(fileInputStream.readAllBytes());
+                fileInputStream.close();
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage(), e);
+            }
+
+        }
+        String connectionURL;
+
+        if (token.isBlank()) {
+            connectionURL = MessageFormat.format("{0}?serverId={1}&username={2}", url, this.serverHash, Minecraft.getInstance().player.getName().getString());
+        } else {
+            connectionURL = MessageFormat.format("{0}?serverId={1}&username={2}&token={3}", url, this.serverHash, Minecraft.getInstance().player.getName().getString(), token.stripTrailing());
+        }
+
         try {
             webSocket = HttpClient
                     .newHttpClient()
@@ -507,5 +555,30 @@ public final class Vega implements IVega {
         if (webSocket != null && config.isSendInfo()) {
             webSocket.sendText("?user=" + gson.toJson(vegaUser, VegaUser.class), true);
         }
+    }
+
+    public String getCurrentServerString() {
+//        Pattern tabPattern = Pattern.compile("/.* Welcome to CivMC *(.*)! .*/gi");
+        Component tabHeader = ((TablistAccessorMixin) Minecraft.getInstance().gui.getTabList()).getHeader();
+        if (tabHeader != null) {
+//            String toMatch = tabHeader.getString().split("\n")[0];
+//            Matcher matcher = tabPattern.matcher(toMatch.strip());
+//            LOGGER.info(toMatch.strip());
+//            boolean b = matcher.matches();
+//            LOGGER.info("Matched " + b);
+//            if (b) {
+//                LOGGER.info("matched str: " + matcher.group(1) + "....");
+//                return matcher.group(1);
+//            }
+
+            // TODO Auuuuuggghhhhh
+            switch (tabHeader.getString().split("\n")[0]) {
+                case "§6§kAAAA§r§6§l Welcome to CivMC! §r§6§kAAAA":
+                    return "main";
+                case "§6§kAAAA§r§6§l Welcome to CivMC §4§lPvP§6§l! §r§6§kAAAA":
+                    return "pvp";
+            }
+        }
+        return "UNKNOWN";
     }
 }

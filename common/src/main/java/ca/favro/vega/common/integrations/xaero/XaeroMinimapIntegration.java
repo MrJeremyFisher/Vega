@@ -16,15 +16,16 @@ import xaero.hud.minimap.world.MinimapWorld;
 
 import java.time.Instant;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class XaeroMinimapIntegration {
-    private Minecraft minecraft;
-    private Vega vega;
-    private Runnable syncRunnable;
+    private final Minecraft minecraft;
+    private final Vega vega;
+    private final Runnable syncRunnable;
     private ScheduledExecutorService scheduledExecutorService;
 
     public XaeroMinimapIntegration(Vega vega, Minecraft minecraft) {
@@ -109,6 +110,7 @@ public class XaeroMinimapIntegration {
                         true
                 ));
             }
-        }, minecraft.level.dimension().identifier().getPath());
+        }, vegaPlayerWaypoint -> minecraft.level.dimension().identifier().getPath().equals(vegaPlayerWaypoint.getWorld())
+                && Objects.equals(vega.getCurrentServerString(), vegaPlayerWaypoint.getServer()));
     }
 }

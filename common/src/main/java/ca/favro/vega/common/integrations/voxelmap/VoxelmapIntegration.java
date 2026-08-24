@@ -2,8 +2,8 @@ package ca.favro.vega.common.integrations.voxelmap;
 
 import ca.favro.vega.common.Vega;
 import ca.favro.vega.common.VegaUser;
-import ca.favro.vega.common.mixin.mixins.VoxelWaypointContainerAccessorMixin;
-import ca.favro.vega.common.mixin.mixins.VoxelWaypointManagerAccessorMixin;
+import ca.favro.vega.common.mixin.mixins.VoxelWaypointContainerAccessor;
+import ca.favro.vega.common.mixin.mixins.VoxelWaypointManagerAccessor;
 import ca.favro.vega.common.renderers.Utils;
 import com.mamiyaotaru.voxelmap.VoxelConstants;
 import com.mamiyaotaru.voxelmap.WaypointManager;
@@ -15,6 +15,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -47,8 +48,8 @@ public class VoxelmapIntegration {
     }
 
     public void sync() {
-        VoxelWaypointManagerAccessorMixin voxelWaypointManager = ((VoxelWaypointManagerAccessorMixin) VoxelConstants.getVoxelMapInstance().getWaypointManager());
-        if (voxelWaypointManager != null && ((VoxelWaypointContainerAccessorMixin) voxelWaypointManager.getWaypointContainer()).getWaypointManager() != null) {
+        VoxelWaypointManagerAccessor voxelWaypointManager = ((VoxelWaypointManagerAccessor) VoxelConstants.getVoxelMapInstance().getWaypointManager());
+        if (voxelWaypointManager != null && ((VoxelWaypointContainerAccessor) voxelWaypointManager.getWaypointContainer()).getWaypointManager() != null) {
             minecraft.execute(() -> voxelWaypointManager.getWaypointContainer().refreshRenderables());
         }
     }
@@ -97,7 +98,8 @@ public class VoxelmapIntegration {
                         waypoint
                 );
             }
-        }, minecraft.level.dimension().identifier().getPath());
+        }, vegaPlayerWaypoint -> minecraft.level.dimension().identifier().getPath().equals(vegaPlayerWaypoint.getWorld())
+                && Objects.equals(vega.getCurrentServerString(), vegaPlayerWaypoint.getServer()));
 
         return trackedPts;
     }

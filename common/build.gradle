@@ -18,6 +18,7 @@ dependencies {
     modImplementation "maven.modrinth:voxelmap-updated:1.21.11-1.16.6"
     modImplementation "maven.modrinth:xaeros-minimap:fabric-1.21.11-26.2.0"
     modImplementation "maven.modrinth:journeymap:1.21.11-6.0.0+fabric"
+    modImplementation "maven.modrinth:tF3LNnBc:f5N3TG1b"
     modCompileOnlyApi "info.journeymap:journeymap-api-fabric:2.0.0-1.21.1"
 }
 
