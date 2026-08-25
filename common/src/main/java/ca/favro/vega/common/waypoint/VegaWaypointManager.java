@@ -19,7 +19,7 @@ public class VegaWaypointManager {
         if (waypoints.containsKey(trackedWaypoint.id())) {
             updateWaypoint(trackedWaypoint);
         } else {
-            LOGGER.info("Tracking new waypoint for {} with id {} in {}", trackedWaypoint.getName(), trackedWaypoint.id().toString(), trackedWaypoint.getWorld());
+//            LOGGER.info("Tracking new waypoint for {} with id {} in {}", trackedWaypoint.getName(), trackedWaypoint.id().toString(), trackedWaypoint.getWorld());
             trackWaypoint(trackedWaypoint);
         }
     }

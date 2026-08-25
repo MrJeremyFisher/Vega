@@ -19,7 +19,9 @@
     "CivModernPlayerWaypointsMixin",
     "CivModernPlayerWaypointsAccessor",
     "CivModernMapScreenMixin",
-    "CivModernMinimapMixin"
+    "CivModernMinimapMixin",
+    "VoxelCompressibleMapRegionMixin",
+    "JourneymapWaypointStoreMixin"
   ],
   "injectors": {
     "defaultRequire": 1

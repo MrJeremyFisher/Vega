@@ -6,15 +6,18 @@ import ca.favro.vega.common.renderers.Utils;
 import journeymap.api.client.impl.ClientAPI;
 import journeymap.api.v2.common.waypoint.Waypoint;
 import journeymap.api.v2.common.waypoint.WaypointFactory;
+import journeymap.client.waypoint.ClientWaypointImpl;
 import journeymap.common.waypoint.WaypointGroupStore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -24,6 +27,7 @@ public class JourneymapIntegration {
     private final Minecraft minecraft;
     private final Vega vega;
     private final Runnable syncRunnable;
+    private final ArrayList<ClientWaypointImpl> trackedPts = new ArrayList<>();
     private ScheduledExecutorService scheduledExecutorService;
 
     public JourneymapIntegration(Vega vega, Minecraft minecraft) {
@@ -44,6 +48,7 @@ public class JourneymapIntegration {
     }
 
     public void stop() {
+        trackedPts.clear();
         clearManagedWaypoints();
         if (scheduledExecutorService != null) {
             scheduledExecutorService.close();
@@ -51,26 +56,20 @@ public class JourneymapIntegration {
     }
 
     public void clearManagedWaypoints() {
+        trackedPts.clear();
         minecraft.execute(() -> {
             ClientAPI.INSTANCE.removeAll(Vega.MOD_ID);
         });
     }
 
     public void sync() {
+        trackedPts.clear();
         if (!vega.config.isShowOnMap()) {
             clearManagedWaypoints();
-            return;
         }
-        Entity entity = Minecraft.getInstance().getCameraEntity();
-        if (entity == null) return;
-        clearManagedWaypoints();
-        minecraft.execute(() -> sync(entity));
-    }
-
-    private void sync(Entity entity) {
         vega.getVegaWaypointManager().forEachWaypoint(vegaPlayerWaypoint -> {
             // TODO I do this check a lot. Make it a method
-            if (!vegaPlayerWaypoint.id().equals(entity.getUUID())
+            if (!vegaPlayerWaypoint.id().equals(Minecraft.getInstance().getCameraEntity().getUUID())
                     && (((Instant.now().toEpochMilli() - vegaPlayerWaypoint.getDateAdded()) / (3.6 * Math.pow(10, 6))) < vega.config.getWaypointKeepAge())) {
                 Vec3 position = vegaPlayerWaypoint.position();
                 VegaUser vegaUser = vega.getVegaUsers().get(vegaPlayerWaypoint.id());
@@ -109,10 +108,13 @@ public class JourneymapIntegration {
 //                                    case null -> "point";
 //                                }
 //                ));
-                ClientAPI.INSTANCE.addWaypoint(Vega.MOD_ID, waypoint);
-                WaypointGroupStore.getInstance().get(WaypointGroupStore.TEMP.getGuid()).addWaypoint(waypoint);
+                trackedPts.add((ClientWaypointImpl) waypoint);
             }
         }, vegaPlayerWaypoint -> minecraft.level.dimension().identifier().getPath().equals(vegaPlayerWaypoint.getWorld())
                 && Objects.equals(vega.getCurrentServerString(), vegaPlayerWaypoint.getServer()));
+    }
+
+    public ArrayList<ClientWaypointImpl> getExtraJourneymapWaypoints() {
+        return trackedPts;
     }
 }

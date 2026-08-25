@@ -68,7 +68,7 @@ import java.util.stream.Collectors;
 
 public final class Vega implements IVega {
     public static final String MOD_ID = "vega";
-    private static final String MOD_VERSION = "1.0.0-1.21.11";
+    private static final String MOD_VERSION = "1.0.1-1.21.11";
     public final Logger LOGGER;
     private static Vega instance = null;
     private String serverHash;
@@ -146,9 +146,11 @@ public final class Vega implements IVega {
     public static void popOpenToast() {
         // TODO remove disconnected toast
         Minecraft instance = Minecraft.getInstance();
-        if (instance.player != null) {
-            Minecraft.getInstance().execute(() -> instance.player.displayClientMessage(Component.literal("[Vega] Connected to Vega server"), false));
-        }
+        instance.execute(() -> {
+            if (instance.player != null) {
+                instance.player.displayClientMessage(Component.literal("[Vega] Connected to Vega server"), false);
+            }
+        });
         // TODO reenable when I figure out nineslice
 //        Minecraft.getInstance().getToastManager().addToast(
 //                getInstance().connectedToast
@@ -157,9 +159,12 @@ public final class Vega implements IVega {
 
     public static void popCloseToast() {
         Minecraft instance = Minecraft.getInstance();
-        if (instance.player != null) {
-            Minecraft.getInstance().execute(() -> instance.player.displayClientMessage(Component.literal("[Vega] Disconnected from Vega server"), false));
-        }
+        instance.execute(() -> {
+            if (instance.player != null) {
+                instance.player.displayClientMessage(Component.literal("[Vega] Disconnected from Vega server"), false);
+            }
+        });
+
 //        Minecraft.getInstance().getToastManager().addToast(
 //                getInstance().disconnectedToast
 //        );
@@ -489,6 +494,10 @@ public final class Vega implements IVega {
 
     public VoxelmapIntegration getVoxelmapIntegration() {
         return voxelmapIntegration;
+    }
+
+    public JourneymapIntegration getJourneymapIntegration() {
+        return journeymapIntegration;
     }
 
     public void tryWSConnection() {

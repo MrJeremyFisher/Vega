@@ -25,11 +25,13 @@ public class MixinLoader implements IMixinConfigPlugin {
         return switch (mixinClassName.substring(34)) {
             case "VoxelMixin",
                  "VoxelWaypointManagerAccessor",
-                 "VoxelWaypointContainerAccessor" -> FabricLoader.getInstance().isModLoaded("voxelmap");
+                 "VoxelWaypointContainerAccessor",
+                 "VoxelCompressibleMapRegionMixin" -> FabricLoader.getInstance().isModLoaded("voxelmap");
             case "CivModernPlayerWaypointsMixin",
                  "CivModernPlayerWaypointsAccessor",
                  "CivModernMapScreenMixin",
                  "CivModernMinimapMixin" -> FabricLoader.getInstance().isModLoaded("civmodern");
+            case "JourneymapWaypointStoreMixin" -> FabricLoader.getInstance().isModLoaded("journeymap");
             default -> true;
         };
     }
