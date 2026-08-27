@@ -19,7 +19,7 @@ public class PlayerEntityMixin {
             locals = LocalCapture.CAPTURE_FAILHARD,
             cancellable = true
     )
-    public void modifyDisplayName(CallbackInfoReturnable<Component> cir, MutableComponent mutableComponent) {
+    public void vega$modifyDisplayName(CallbackInfoReturnable<Component> cir, MutableComponent mutableComponent) {
         try {
             Component replacement = Vega.getInstance().handleReplaceName(cir.getReturnValue(), ((Player) (Object) this).getUUID());
             if (replacement != null) {
@@ -28,7 +28,5 @@ public class PlayerEntityMixin {
         } catch (Throwable e) {
             VegaFabric.LOGGER.error("Error in Vega nameplate handling", e);
         }
-
     }
-
 }

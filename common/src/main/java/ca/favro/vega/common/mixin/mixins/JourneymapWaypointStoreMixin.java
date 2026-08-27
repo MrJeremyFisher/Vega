@@ -21,7 +21,7 @@ public class JourneymapWaypointStoreMixin {
             cancellable = true,
             remap = false
     )
-    private void addWaypoints(CallbackInfoReturnable<Collection<ClientWaypointImpl>> cir) {
+    private void vega$addWaypoints(CallbackInfoReturnable<Collection<ClientWaypointImpl>> cir) {
         Collection<ClientWaypointImpl> extra = Vega.getInstance().getJourneymapIntegration().getExtraJourneymapWaypoints();
         if (extra == null) {
             cir.setReturnValue(cir.getReturnValue());

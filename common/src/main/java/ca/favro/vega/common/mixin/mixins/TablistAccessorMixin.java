@@ -10,10 +10,10 @@ public interface TablistAccessorMixin {
     @Accessor(
             value = "header"
     )
-    Component getHeader();
+    Component vega$getHeader();
 
     @Accessor(
             value = "footer"
     )
-    Component getFooter();
+    Component vega$getFooter();
 }

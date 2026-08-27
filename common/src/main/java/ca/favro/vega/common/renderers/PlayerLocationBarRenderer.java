@@ -28,8 +28,6 @@ import static ca.favro.vega.common.renderers.Utils.status2Color;
 public class PlayerLocationBarRenderer implements ContextualBarRenderer {
     // For now we just reuse the Mojang locator textures because they're nice enough
     private static final Identifier LOCATOR_BAR_BACKGROUND = Identifier.withDefaultNamespace("hud/locator_bar_background");
-    private static final Identifier LOCATOR_BAR_ARROW_UP = Identifier.withDefaultNamespace("hud/locator_bar_arrow_up");
-    private static final Identifier LOCATOR_BAR_ARROW_DOWN = Identifier.withDefaultNamespace("hud/locator_bar_arrow_down");
     private static final Minecraft minecraft = Minecraft.getInstance();
     private Vega vega;
 
@@ -50,7 +48,6 @@ public class PlayerLocationBarRenderer implements ContextualBarRenderer {
         Entity entity = this.minecraft.getCameraEntity();
         if (entity != null) {
             Level level = entity.level();
-            TickRateManager tickRateManager = level.tickRateManager();
             vega.getVegaWaypointManager().forEachWaypoint(
                     (trackedWaypoint) -> {
                         if (!trackedWaypoint.id().equals(entity.getUUID()) // Don't render own waypoint
@@ -82,14 +79,11 @@ public class PlayerLocationBarRenderer implements ContextualBarRenderer {
             int l = Mth.floor(d * 173.0 / 2.0 / 60.0);
             guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, identifier, j + l, i - 2, 9, 9, k);
             if ((d <= 5.0 && d >= -5.0) && minecraft.options.keyShift.isDown()) {
-                float bgOpacity = minecraft.options.getBackgroundOpacity(0.25f);
-                int bgColor = (int) (bgOpacity * 255.0f) << 24;
-                bgColor = 0x7F000001;
                 Font font = minecraft.font;
                 String name = trackedWaypoint.getName();
                 // Have to manually fill bgcolour as it doesn't do anything in GuiTextRenderState
                 int halfWidth = font.width(name) / 2;
-                guiGraphics.fill(j + l - 2 - halfWidth + (9 / 2), i + 10 + 1 - 10, j + l + 2 + halfWidth + (9 / 2), i - 10 - 1, bgColor);
+                guiGraphics.fill(j + l - 2 - halfWidth + (9 / 2), i + 10 + 1 - 10, j + l + 2 + halfWidth + (9 / 2), i - 10 - 1, 0x7F000001);
                 guiGraphics.guiRenderState.submitText(new GuiTextRenderState(font,
                         Language.getInstance().getVisualOrder(FormattedText.of(name)),
                         guiGraphics.pose(), j + (9 / 2) + l - halfWidth, i - 10, k, 0,

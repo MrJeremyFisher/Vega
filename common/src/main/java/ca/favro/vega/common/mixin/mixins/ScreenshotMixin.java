@@ -20,7 +20,7 @@ public class ScreenshotMixin {
             method = {"grab(Ljava/io/File;Ljava/lang/String;Lcom/mojang/blaze3d/pipeline/RenderTarget;ILjava/util/function/Consumer;)V"},
             at = {@At("HEAD")}
     )
-    private static void saveScreenshot(File file, @Nullable String string, RenderTarget renderTarget, int i, Consumer<Component> consumer, CallbackInfo ci) {
+    private static void vega$saveScreenshot(File file, @Nullable String string, RenderTarget renderTarget, int i, Consumer<Component> consumer, CallbackInfo ci) {
         try {
             if (Vega.getInstance() != null) {
                 Vega.getInstance().handleScreenshot(file, renderTarget, consumer);

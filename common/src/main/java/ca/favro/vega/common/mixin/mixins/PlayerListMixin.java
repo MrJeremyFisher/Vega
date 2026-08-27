@@ -19,7 +19,7 @@ public class PlayerListMixin {
             locals = LocalCapture.CAPTURE_FAILHARD,
             cancellable = true
     )
-    protected void modifyDisplayName(PlayerInfo playerInfo, CallbackInfoReturnable<Component> cir) {
+    protected void vega$modifyDisplayName(PlayerInfo playerInfo, CallbackInfoReturnable<Component> cir) {
         try {
             Component displayName = Vega.getInstance().handleReplaceName(playerInfo.getTabListDisplayName(), playerInfo.getProfile().id());
             if (displayName != null) {

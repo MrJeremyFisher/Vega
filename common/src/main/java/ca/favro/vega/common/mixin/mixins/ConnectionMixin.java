@@ -20,7 +20,7 @@ public class ConnectionMixin {
             method = {"send(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;)V"},
             cancellable = true
     )
-    private void sendPacket(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener, CallbackInfo ci) {
+    private void vega$sendPacket(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener, CallbackInfo ci) {
         try {
             boolean dropPacket = Vega.getInstance().handlePacketSending(packet);
             if (dropPacket) {
@@ -36,7 +36,7 @@ public class ConnectionMixin {
             at = {@At("HEAD")},
             cancellable = true
     )
-    private static void handlePacket(Packet<?> packet, PacketListener packetListener, CallbackInfo ci) {
+    private static void vega$handlePacket(Packet<?> packet, PacketListener packetListener, CallbackInfo ci) {
         try {
             boolean dropPacket = VegaFabric.vega.handlePacketReceiving(packet);
             if (dropPacket) {
@@ -51,7 +51,7 @@ public class ConnectionMixin {
 //            method = {"Lnet/minecraft/network/Connection;disconnect(Lnet/minecraft/network/DisconnectionDetails;)V"},
 //            at = {@At("HEAD")}
 //    )
-//    private void handleDisconnect(DisconnectionDetails disconnectionDetails, CallbackInfo ci) {
+//    private void vega$handleDisconnect(DisconnectionDetails disconnectionDetails, CallbackInfo ci) {
 //        try {
 ////            Connection self = (Connection) (Object) this;
 ////            VegaFabric.vega.handleDisconnectedFromServer(disconnectionDetails, self);

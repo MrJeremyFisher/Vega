@@ -23,7 +23,7 @@ public class CivModernPlayerWaypointsMixin {
             remap = false,
             cancellable = true
     )
-    private void acceptorBlocker(Component message, CallbackInfo ci) {
+    private void vega$acceptorBlocker(Component message, CallbackInfo ci) {
         if (Vega.getInstance().config.isRenderEnabled()) {
             ci.cancel();
         }

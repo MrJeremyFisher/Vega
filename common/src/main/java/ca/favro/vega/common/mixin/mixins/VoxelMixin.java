@@ -27,7 +27,7 @@ public abstract class VoxelMixin {
             cancellable = true,
             remap = false
     )
-    public void getWaypoints(CallbackInfoReturnable<ArrayList<Waypoint>> cir) {
+    public void vega$getWaypoints(CallbackInfoReturnable<ArrayList<Waypoint>> cir) {
         ArrayList<Waypoint> extra = Vega.getInstance().getVoxelmapIntegration().getExtraVoxelMapWaypoints();
         if (extra == null) {
             cir.setReturnValue(this.wayPts);
@@ -42,7 +42,7 @@ public abstract class VoxelMixin {
             at = {@At("RETURN")},
             remap = false
     )
-    public void enteredDimension(DimensionContainer dimension, CallbackInfo ci) {
+    public void vega$enteredDimension(DimensionContainer dimension, CallbackInfo ci) {
         // TODO clear waypts?
     }
 }

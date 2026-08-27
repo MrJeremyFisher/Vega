@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class VoxelCompressibleMapRegionMixin {
     // Fixes an image not allocated error/crash. Not sure why it happens, but this fixes it.
     @Inject(method = "setRGB(III)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/NativeImage;setPixel(III)V"), cancellable = true)
-    public void fixNotAllocCrash(int x, int y, int color, CallbackInfo ci, @Local(name = "localPixels") NativeImage localPixels) {
+    public void vega$fixNotAllocCrash(int x, int y, int color, CallbackInfo ci, @Local(name = "localPixels") NativeImage localPixels) {
         if (localPixels.getPointer() == 0L) {
             ci.cancel();
         }

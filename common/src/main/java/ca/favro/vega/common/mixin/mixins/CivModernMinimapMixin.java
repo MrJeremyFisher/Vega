@@ -13,7 +13,7 @@ public class CivModernMinimapMixin {
                     target = "Lsh/okx/civmodern/common/map/waypoints/PlayerWaypoint;render(Lnet/minecraft/client/gui/GuiGraphics;I)V"
             ),
             remap = false)
-    private void reColourIcons(Args args) {
+    private void vega$reColourIcons(Args args) {
         args.set(1, 0xFFFFFFFF);
     }
 }

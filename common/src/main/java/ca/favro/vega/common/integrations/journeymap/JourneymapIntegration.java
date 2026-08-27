@@ -63,10 +63,13 @@ public class JourneymapIntegration {
     }
 
     public void sync() {
+        if (!vega.config.isShowOnMap()) return;
         trackedPts.clear();
         if (!vega.config.isShowOnMap()) {
             clearManagedWaypoints();
         }
+        String level = minecraft.level.dimension().identifier().getPath();
+        String server = vega.getCurrentServerString();
         vega.getVegaWaypointManager().forEachWaypoint(vegaPlayerWaypoint -> {
             // TODO I do this check a lot. Make it a method
             if (!vegaPlayerWaypoint.id().equals(Minecraft.getInstance().getCameraEntity().getUUID())
@@ -110,8 +113,8 @@ public class JourneymapIntegration {
 //                ));
                 trackedPts.add((ClientWaypointImpl) waypoint);
             }
-        }, vegaPlayerWaypoint -> minecraft.level.dimension().identifier().getPath().equals(vegaPlayerWaypoint.getWorld())
-                && Objects.equals(vega.getCurrentServerString(), vegaPlayerWaypoint.getServer()));
+        }, vegaPlayerWaypoint -> level.equals(vegaPlayerWaypoint.getWorld())
+                && Objects.equals(server, vegaPlayerWaypoint.getServer()));
     }
 
     public ArrayList<ClientWaypointImpl> getExtraJourneymapWaypoints() {

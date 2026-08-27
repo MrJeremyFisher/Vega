@@ -14,7 +14,7 @@ import java.security.PublicKey;
 @Mixin(ServerboundKeyPacket.class)
 public class ClientHandshakeMixin {
     @Inject(method = "<init>(Ljavax/crypto/SecretKey;Ljava/security/PublicKey;[B)V", at = @At(value = "HEAD"))
-    private static void onSendC2SKeyPacket(SecretKey secretKey, PublicKey publicKey, byte[] challenge, CallbackInfo ci) {
+    private static void vega$onSendC2SKeyPacket(SecretKey secretKey, PublicKey publicKey, byte[] challenge, CallbackInfo ci) {
         try {
             if (Vega.getInstance() != null) {
                 Vega.getInstance().setServerHash(IVega.generateServerId("", publicKey, secretKey));

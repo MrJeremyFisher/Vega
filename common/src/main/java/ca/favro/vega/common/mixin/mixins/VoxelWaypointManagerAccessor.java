@@ -14,5 +14,5 @@ public interface VoxelWaypointManagerAccessor {
             value = "waypointContainer",
             remap = false
     )
-    WaypointContainer getWaypointContainer();
+    WaypointContainer vega$getWaypointContainer();
 }

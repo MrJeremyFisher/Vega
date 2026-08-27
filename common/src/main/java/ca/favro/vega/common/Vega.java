@@ -68,7 +68,7 @@ import java.util.stream.Collectors;
 
 public final class Vega implements IVega {
     public static final String MOD_ID = "vega";
-    private static final String MOD_VERSION = "1.0.1-1.21.11";
+    private static final String MOD_VERSION = "1.0.3-1.21.11";
     public final Logger LOGGER;
     private static Vega instance = null;
     private String serverHash;
@@ -139,7 +139,7 @@ public final class Vega implements IVega {
             journeymapIntegration = new JourneymapIntegration(this, Minecraft.getInstance());
         }
         if (civmodernEnabled) {
-            civModernIntegration = new CivModernIntegration(this, Minecraft.getInstance());
+            civModernIntegration = new CivModernIntegration(this, Minecraft.getInstance(), !(voxelmapEnabled || journeymapEnabled || xaerosmapEnabled));
         }
     }
 
@@ -216,9 +216,12 @@ public final class Vega implements IVega {
 
         playerSender = new Runnable() {
             public void run() {
-                // Filter for non local players (illegal to share them) who aren't the player running the mod, who can share their information fine
+                // Filter for non local players (illegal to share them) who aren't the player running the mod, who can share their information fine.
+                // Also don't resend remote players as the server should already have them
+                String localName = Minecraft.getInstance().player.getGameProfile().name();
                 for (VegaPlayer player : trackedPlayers.values().stream().filter(
-                        player -> player.source() != VegaPlayer.Source.LOCAL || !Objects.equals(player.name(), Minecraft.getInstance().player.getGameProfile().name())
+                        player -> (player.source() != VegaPlayer.Source.LOCAL && player.source() != VegaPlayer.Source.REMOTE)
+                                || Objects.equals(player.name(), localName)
                 ).collect(Collectors.toSet())
                 ) {
                     if (webSocket != null && config.isSendInfo()) {
@@ -378,7 +381,6 @@ public final class Vega implements IVega {
     @Override
     public boolean handlePacketReceiving(Packet<?> packet) {
         if (packet instanceof ClientboundSystemChatPacket cscp) {
-            if (civmodernEnabled) return false;
             if (Minecraft.getInstance().level == null) return false;
             SnitchAlert snitchAlert = SnitchAlert.fromChat(cscp.content(), Minecraft.getInstance().level.dimension().identifier().getPath());
             if (snitchAlert == null || Minecraft.getInstance().player == null) return false;
@@ -568,7 +570,7 @@ public final class Vega implements IVega {
 
     public String getCurrentServerString() {
 //        Pattern tabPattern = Pattern.compile("/.* Welcome to CivMC *(.*)! .*/gi");
-        Component tabHeader = ((TablistAccessorMixin) Minecraft.getInstance().gui.getTabList()).getHeader();
+        Component tabHeader = ((TablistAccessorMixin) Minecraft.getInstance().gui.getTabList()).vega$getHeader();
         if (tabHeader != null) {
 //            String toMatch = tabHeader.getString().split("\n")[0];
 //            Matcher matcher = tabPattern.matcher(toMatch.strip());

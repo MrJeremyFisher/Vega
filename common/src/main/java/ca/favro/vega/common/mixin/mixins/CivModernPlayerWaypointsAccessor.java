@@ -13,5 +13,5 @@ public interface CivModernPlayerWaypointsAccessor {
     @Accessor(
             value = "waypoints",
             remap = false)
-    Map<UUID, PlayerWaypoint> getWaypointsMap();
+    Map<UUID, PlayerWaypoint> vega$getWaypointsMap();
 }

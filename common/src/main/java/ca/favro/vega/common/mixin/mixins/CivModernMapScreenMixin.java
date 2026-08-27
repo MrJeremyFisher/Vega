@@ -19,7 +19,7 @@ public class CivModernMapScreenMixin {
                     target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIIZ)V"
             ),
             remap = false)
-    private void reColourNames(Args args, @Local PlayerWaypoint waypoint) {
+    private void vega$reColourNames(Args args, @Local PlayerWaypoint waypoint) {
         args.set(1, ((MutableComponent) args.get(1)).withColor(Utils.status2Color(Vega.getInstance().getStatus(waypoint.playerId()))));
         args.set(4, 0xFFFFFFFF);
     }
@@ -30,7 +30,7 @@ public class CivModernMapScreenMixin {
             ),
             remap = false,
             index = 1)
-    private int reColourIcons(int colour) {
+    private int vega$reColourIcons(int colour) {
         return 0xFFFFFFFF;
     }
 }

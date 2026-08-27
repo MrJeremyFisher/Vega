@@ -49,8 +49,8 @@ public class VoxelmapIntegration {
 
     public void sync() {
         VoxelWaypointManagerAccessor voxelWaypointManager = ((VoxelWaypointManagerAccessor) VoxelConstants.getVoxelMapInstance().getWaypointManager());
-        if (voxelWaypointManager != null && ((VoxelWaypointContainerAccessor) voxelWaypointManager.getWaypointContainer()).getWaypointManager() != null) {
-            minecraft.execute(() -> voxelWaypointManager.getWaypointContainer().refreshRenderables());
+        if (voxelWaypointManager != null && ((VoxelWaypointContainerAccessor) voxelWaypointManager.vega$getWaypointContainer()).vega$getWaypointManager() != null) {
+            minecraft.execute(() -> voxelWaypointManager.vega$getWaypointContainer().refreshRenderables());
         }
     }
 

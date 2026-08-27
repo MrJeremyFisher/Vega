@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(TransientEntitySectionManager.class)
 public class TransientEntitySectionManagerMixin {
     @Inject(at = @At("TAIL"), method = "addEntity")
-    public void addEntity(EntityAccess entity, CallbackInfo ci) {
+    public void vega$addEntity(EntityAccess entity, CallbackInfo ci) {
         if (!entity.isAlwaysTicking() || Vega.getInstance() == null) { // Only players are alwaysTicking
             return;
         }
@@ -28,7 +28,7 @@ public class TransientEntitySectionManagerMixin {
         private EntityAccess entity;
 
         @Inject(at = @At("TAIL"), method = "onMove")
-        public void updateEntityPosition(CallbackInfo ci) {
+        public void vega$updateEntityPosition(CallbackInfo ci) {
             if (!entity.isAlwaysTicking() || Vega.getInstance() == null) { // Only players are alwaysTicking
                 return;
             }

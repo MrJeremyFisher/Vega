@@ -4,16 +4,11 @@ package ca.favro.vega.common.renderers;
 import ca.favro.vega.common.Vega;
 import ca.favro.vega.common.waypoint.VegaPlayerWaypoint;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BeaconRenderer;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
@@ -57,10 +52,10 @@ public class PlayerLocationBeamRenderer {
         VegaPlayerWaypoint waypoint = new VegaPlayerWaypoint(wp);
         String mainLabel = waypoint.getName();
 
-        Vec3 cPos = minecraft.getCameraEntity().position();
-        double x = waypoint.position().x + 0.5 - cPos.x;
-        double y = waypoint.position().y + 0.5 - cPos.y;
-        double z = waypoint.position().z + 0.5 - cPos.z;
+        Vec3 cPos = minecraft.getEntityRenderDispatcher().camera.position();
+        double x = waypoint.position().x - cPos.x;
+        double y = waypoint.position().y - cPos.y;
+        double z = waypoint.position().z - cPos.z;
         float distance = (float) Mth.length(x, y, z);
         // TODO make setting
         if (distance <= 3) {
@@ -84,7 +79,7 @@ public class PlayerLocationBeamRenderer {
 
         float alpha = distance > 5.0 ? 1.0F : distance / 5.0F;
 
-        Vec3 lookVector = minecraft.getCameraEntity().getViewVector(minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false)).normalize();
+        Vec3 lookVector = minecraft.getCameraEntity().getViewVector(minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(true)).normalize();
         Vec3 vectorBetween = waypoint.position().subtract(minecraft.getCameraEntity().position());
         boolean isLookingAt = lookVector.dot(vectorBetween.normalize()) > 1 - 1.0 / vectorBetween.length();
         if (!isLookingAt && !vega.getFocusedPlayers().contains(waypoint.id())) {
@@ -128,47 +123,31 @@ public class PlayerLocationBeamRenderer {
 
     private void renderBeam(PoseStack poseStack, MultiBufferSource bufferSource, VegaPlayerWaypoint wp) {
         VegaPlayerWaypoint waypoint = new VegaPlayerWaypoint(wp);
-        int height = minecraft.level.getHeight();
-
-        float spentTime = minecraft.getCameraEntity().tickCount + minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        float texturePos = Mth.frac(spentTime * 0.2F - Mth.floor(spentTime * 0.1F));
-
-        poseStack.pushPose();
-        poseStack.translate(waypoint.position().subtract(minecraft.getCameraEntity().getPosition(minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false))));
-
-        poseStack.pushPose();
-        poseStack.mulPose(Axis.YP.rotationDegrees(spentTime * 2.25F - 45.0F));
-
-        float beamRadius = BeaconRenderer.SOLID_BEAM_RADIUS / 1.4142F;
-        float beamMaxV = 1.0F - texturePos;
-        float beamMinV = height * (0.5F / BeaconRenderer.SOLID_BEAM_RADIUS) + beamMaxV;
-        int beamColor = status2Color(vega.getStatus(waypoint.id()));
-        RenderType beamRenderType = RenderTypes.beaconBeam(BeaconRenderer.BEAM_LOCATION, false);
-        drawBeam(poseStack, bufferSource, height, beamRadius, beamMaxV, beamMinV, beamColor, beamRenderType);
-        poseStack.popPose();
-
-        float glowRadius = BeaconRenderer.BEAM_GLOW_RADIUS;
-        float glowMaxV = 1.0F - texturePos;
-        float glowMinV = height + beamMaxV;
-        int glowColor = (status2Color(vega.getStatus(waypoint.id())) & 0x00FFFFFF) | 0x40000000;
-
-        RenderType glowRenderType = RenderTypes.beaconBeam(BeaconRenderer.BEAM_LOCATION, true);
-        drawBeam(poseStack, bufferSource, height, glowRadius, glowMaxV, glowMinV, glowColor, glowRenderType);
-        poseStack.popPose();
-    }
-
-    private void drawBeam(PoseStack poseStack, MultiBufferSource bufferSource, int height, float glowRadius, float glowMaxV, float glowMinV, int glowColor, RenderType glowRenderType) {
-        VertexConsumer glowBuffer = bufferSource.getBuffer(glowRenderType);
-        for (int face = 0; face < 4; ++face) {
-            float x = (face == 0 || face == 3) ? -glowRadius : glowRadius;
-            float z = (face < 2) ? -glowRadius : glowRadius;
-            float x2 = (face < 2) ? -glowRadius : glowRadius;
-            float z2 = (face == 1 || face == 2) ? -glowRadius : glowRadius;
-
-            glowBuffer.addVertex(poseStack.last(), x, height, z).setNormal(poseStack.last(), 0.0F, 1.0F, 0.0F).setUv(1.0F, glowMinV).setColor(glowColor).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT);
-            glowBuffer.addVertex(poseStack.last(), x, 0.0F, z).setNormal(poseStack.last(), 0.0F, 1.0F, 0.0F).setUv(1.0F, glowMaxV).setColor(glowColor).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT);
-            glowBuffer.addVertex(poseStack.last(), x2, 0.0F, z2).setNormal(poseStack.last(), 0.0F, 1.0F, 0.0F).setUv(0.0F, glowMaxV).setColor(glowColor).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT);
-            glowBuffer.addVertex(poseStack.last(), x2, height, z2).setNormal(poseStack.last(), 0.0F, 1.0F, 0.0F).setUv(0.0F, glowMinV).setColor(glowColor).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT);
+        Vec3 cPos = minecraft.getEntityRenderDispatcher().camera.position();
+        double x = waypoint.position().x - cPos.x - 0.5;
+        double y = waypoint.position().y - cPos.y;
+        double z = waypoint.position().z - cPos.z - 0.5;
+        float distance = (float) Mth.length(x, y, z);
+        // TODO make setting
+        if (distance <= 0 || distance > (Minecraft.getInstance().options.getEffectiveRenderDistance() * 16 * 4) - 2) {
+            return;
         }
+        float spentTime = minecraft.getCameraEntity().tickCount + minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(true);
+        poseStack.pushPose();
+        poseStack.translate(x, y, z);
+        int beamColor = (status2Color(vega.getStatus(waypoint.id())) & 0x00FFFFFF) | 0x80000000;
+        BeaconRenderer.submitBeaconBeam(
+                poseStack,
+                minecraft.gameRenderer.getFeatureRenderDispatcher().getSubmitNodeStorage(),
+                BeaconRenderer.BEAM_LOCATION,
+                1.0F,
+                spentTime,
+                0,
+                minecraft.level.getHeight(),
+                beamColor,
+                BeaconRenderer.SOLID_BEAM_RADIUS / 1.4142F,
+                BeaconRenderer.BEAM_GLOW_RADIUS
+        );
+        poseStack.popPose();
     }
 }
