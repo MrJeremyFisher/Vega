@@ -9,15 +9,15 @@ import net.fabricmc.loader.impl.FabricLoaderImpl;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,6 +54,9 @@ public class VegaWebsocketHandler implements WebSocket.Listener {
 
         ret += String.format(" lifetime of %s seconds", Instant.now().getEpochSecond() - start);
         LOGGER.info(ret);
+        if (statusCode != 401) {
+            vega.tryReconnect();
+        }
         return WebSocket.Listener.super.onClose(webSocket, statusCode, reason);
     }
 
@@ -72,6 +75,7 @@ public class VegaWebsocketHandler implements WebSocket.Listener {
             if (data.length() == 3) {
                 if (data.toString().equals("200")) {
                     LOGGER.info("Connected to Vega server at {}", vega.config.getWssURL());
+                    vega.wsConnectionDelay = 1000;
                     Vega.popOpenToast();
                     return WebSocket.Listener.super.onText(webSocket, data, true);
                 } else if (data.toString().equals("401")) {
@@ -129,8 +133,9 @@ public class VegaWebsocketHandler implements WebSocket.Listener {
 
     @Override
     public void onError(WebSocket webSocket, Throwable error) {
+        LOGGER.error("Websocket connection error, lifetime of %s seconds {}", Instant.now().getEpochSecond() - start);
         LOGGER.error(error.getMessage(), error);
         Vega.popCloseToast();
-        // TODO auto reconnect
+        vega.tryReconnect();
     }
 }

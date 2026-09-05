@@ -22,26 +22,32 @@ import ca.favro.vega.common.websocket.VegaWebsocketHandler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.impl.FabricLoaderImpl;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.Connection;
 import net.minecraft.network.DisconnectionDetails;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -56,6 +62,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -68,7 +76,7 @@ import java.util.stream.Collectors;
 
 public final class Vega implements IVega {
     public static final String MOD_ID = "vega";
-    private static final String MOD_VERSION = "1.0.3-1.21.11";
+    private static final String MOD_VERSION = "1.0.8-1.21.11";
     public final Logger LOGGER;
     private static Vega instance = null;
     private String serverHash;
@@ -82,6 +90,7 @@ public final class Vega implements IVega {
             .registerTypeAdapter(VegaPlayer.class, new VegaPlayer.VegaPlayerDeserializer())
             .registerTypeAdapter(VegaUser.class, new VegaUser.VegaUserSerializer())
             .create();
+    public int wsConnectionDelay = 1000;
     public VegaConfig config;
     private VegaWaypointManager vegaWaypointManager;
     private static PlayerLocationBarRenderer playerLocationBarRenderer;
@@ -276,6 +285,7 @@ public final class Vega implements IVega {
         vegaWaypointManager.untrackAllWaypoints();
 
         if (webSocket != null) {
+            wsConnectionDelay = -1;
             webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Client shutting down");
         }
     }
@@ -292,33 +302,93 @@ public final class Vega implements IVega {
     public void handlePlayerMove(Player player) {
         Vec3 pos = player.position();
         Entity e = Minecraft.getInstance().getCameraEntity();
-        pos = new Vec3(pos.x, e == null ? 64 : e.getY(), pos.z);
-//        Optional<Map.Entry<UUID, VegaPlayer>> duplicate = trackedPlayers.entrySet().stream().filter(
-//                entry ->
-//                        entry.getValue().name().equals(player.getName().getString())
-//                                && !entry.getKey().equals(player.getUUID())
-//        ).findFirst();
-//        // Clear combat logger waypoints
-//        if (duplicate.isPresent()) {
-//            Map.Entry<UUID, VegaPlayer> duplicateF = duplicate.get();
-//            trackedPlayers.remove(duplicateF.getKey());
-//            vegaWaypointManager.untrackWaypoint(duplicateF.getKey());
-//        }
-        trackedPlayers.put(player.getUUID(),
-                new VegaPlayer(player.getName().getString(),
-                        player.getUUID(),
-                        pos,
-                        Minecraft.getInstance().level.dimension().identifier().getPath(), getCurrentServerString(),
-                        System.currentTimeMillis(), VegaPlayer.Source.LOCAL)
+        if (e == null || Minecraft.getInstance().level == null) return;
+        pos = new Vec3(pos.x, e.getY(), pos.z);
+        String name = player.getName().getString();
+        UUID uuid = player.getUUID();
+        Optional<Map.Entry<UUID, VegaPlayer>> duplicate = trackedPlayers.entrySet().stream().filter(
+                entry ->
+                        entry.getValue().name().equals(name)
+                                && !entry.getKey().equals(uuid)
+        ).findFirst();
+        // Clear combat logger waypoints
+        if (duplicate.isPresent()) {
+            Map.Entry<UUID, VegaPlayer> duplicateF = duplicate.get();
+            trackedPlayers.remove(duplicateF.getKey());
+            vegaWaypointManager.untrackWaypoint(duplicateF.getKey());
+        }
+        VegaPlayer entry = new VegaPlayer(name,
+                uuid,
+                pos,
+                Minecraft.getInstance().level.dimension().identifier().getPath(), getCurrentServerString(),
+                System.currentTimeMillis(), uuid == e.getUUID() ? VegaPlayer.Source.USER : VegaPlayer.Source.LOCAL);
+        trackedPlayers.put(uuid,
+                entry
         );
         vegaWaypointManager.trackOrUpdate(new VegaPlayerWaypoint(
-                trackedPlayers.get(player.getUUID())
+                entry
         ));
     }
 
     public void handleScreenshot(File gameDirectory, RenderTarget renderTarget, Consumer<Component> messageConsumer) {
-        // TODO: To censor info, disable all Vega rendering (incl. map wps), render one frame, save that frame as the screenshot,
-        // TODO: cancel the original screenshot
+        // TODO leftover, remove on loader update ugh
+    }
+
+    public void handleScreenshot1(File gameDirectory, String filename, RenderTarget renderTarget, Consumer<Component> messageConsumer) {
+        VegaConfig realConfig = this.config;
+        VegaConfig fakeConfig = new VegaConfig(null);
+        fakeConfig.setRenderEnabled(false);
+        fakeConfig.setShowOnMap(false);
+        this.config = fakeConfig;
+        clearMaps();
+        Minecraft.getInstance().gameRenderer.render(Minecraft.getInstance().getDeltaTracker(), true);
+        Screenshot.takeScreenshot(renderTarget, doScreenshot(gameDirectory, filename, messageConsumer, true));
+        this.config = realConfig;
+        syncMaps();
+        Minecraft.getInstance().gameRenderer.render(Minecraft.getInstance().getDeltaTracker(), true);
+        Screenshot.takeScreenshot(renderTarget, doScreenshot(gameDirectory, filename, messageConsumer, false));
+    }
+
+    private @NonNull Consumer<NativeImage> doScreenshot(File gameDirectory, String filename, Consumer<Component> messageConsumer, boolean censored) {
+        return nativeImage -> {
+            File file2 = new File(gameDirectory, "screenshots");
+            file2.mkdir();
+            File file3;
+            if (filename == null) {
+                file3 = getFile(file2, censored);
+            } else {
+                file3 = new File(file2, filename + (censored ? "_censored" : ""));
+            }
+            Util.ioPool()
+                    .execute(
+                            () -> {
+                                try (nativeImage) {
+                                    nativeImage.writeToFile(file3);
+                                    Component component = Component.literal(file3.getName())
+                                            .withStyle(ChatFormatting.UNDERLINE)
+                                            .withStyle(style -> style.withClickEvent(new ClickEvent.OpenFile(file3.getAbsoluteFile())));
+                                    messageConsumer.accept(Component.translatable("screenshot.success", component));
+                                } catch (Exception exception) {
+                                    LOGGER.warn("Couldn't save screenshot", exception);
+                                    messageConsumer.accept(Component.translatable("screenshot.failure", exception.getMessage()));
+                                }
+                            }
+                    );
+        };
+    }
+
+    private static File getFile(File gameDirectory, boolean censored) {
+        String string = Util.getFilenameFormattedDateTime();
+        int i = 1;
+
+        while (true) {
+            File file = new File(gameDirectory, string + (i == 1 ? "" : "_" + i) + (censored ? "_censored" : "") + ".png");
+            if (!file.exists()) {
+                return file;
+            }
+
+            i++;
+        }
     }
 
     public void receiveRemotePlayer(VegaPlayer receivedPlayer) {
@@ -357,15 +427,18 @@ public final class Vega implements IVega {
     }
 
     public void renderOverlays(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
-        if (config.isRenderEnabled() && config.isShowLocatorBar()) {
+        if (config.isRenderEnabled()
+                && config.isShowLocatorBar()
+                && !Minecraft.getInstance().options.hideGui) {
             playerLocationBarRenderer.render(guiGraphics, deltaTracker);
         }
     }
 
     public void renderWaypointBeams(PoseStack matrices, MultiBufferSource multiBufferSource) {
-        if (config.isRenderEnabled()) {
-            playerLocationBeamRenderer.renderWaypointBeams(matrices, multiBufferSource);
-        }
+        if (!config.isRenderEnabled()
+                || Minecraft.getInstance().options.hideGui
+        ) return;
+        playerLocationBeamRenderer.renderWaypointBeams(matrices, multiBufferSource);
     }
 
     @Override
@@ -407,11 +480,12 @@ public final class Vega implements IVega {
     }
 
     private void handleSnitch(SnitchAlert snitchAlert, UUID uuid) {
-        trackedPlayers.put(uuid, new VegaPlayer(
+        VegaPlayer entry = new VegaPlayer(
                 snitchAlert.accountName, uuid, snitchAlert.pos, snitchAlert.world, getCurrentServerString(), snitchAlert.ts, VegaPlayer.Source.SNITCH
-        ));
+        );
+        trackedPlayers.put(uuid, entry);
         vegaWaypointManager.trackOrUpdate(new VegaPlayerWaypoint(
-                trackedPlayers.get(uuid)
+                entry
         ));
 
         queuedSnitchAlerts.put(uuid, snitchAlert);
@@ -471,6 +545,18 @@ public final class Vega implements IVega {
         }
     }
 
+    public void clearMaps() {
+        if (this.xaerosmapEnabled) {
+            xaeroMinimapIntegration.clearManagedWaypoints();
+        }
+        if (this.journeymapEnabled) {
+            journeymapIntegration.clearManagedWaypoints();
+        }
+        if (this.civmodernEnabled) {
+            civModernIntegration.clearManagedWaypoints();
+        }
+    }
+
     public void syncMaps() {
         if (this.voxelmapEnabled) {
             voxelmapIntegration.sync();
@@ -503,6 +589,8 @@ public final class Vega implements IVega {
     }
 
     public void tryWSConnection() {
+        if (webSocket != null && !webSocket.isOutputClosed()) return;
+
         String url = config.getWssURL();
         if (!url.endsWith("/")) {
             url += "/";
@@ -535,8 +623,24 @@ public final class Vega implements IVega {
                     .buildAsync(URI.create(connectionURL), new VegaWebsocketHandler(this))
                     .join();
         } catch (Exception e) {
-            LOGGER.info("Unable to connect to WS server {}. Is it down?", config.getWssURL());
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.info("Unable to connect to WS server {}. Is it down? ({})", config.getWssURL(), e.toString());
+            tryReconnect();
+        }
+    }
+
+    public void tryReconnect() {
+        if (this.wsConnectionDelay > 0) {
+            LOGGER.warn("Trying ws reconn");
+            this.wsConnectionDelay *= 2;
+            new Timer().schedule(
+                    new TimerTask() {
+                        @Override
+                        public void run() {
+                            tryWSConnection();
+                        }
+                    },
+                    this.wsConnectionDelay
+            );
         }
     }
 

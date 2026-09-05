@@ -29,7 +29,7 @@ public abstract class VoxelMixin {
     )
     public void vega$getWaypoints(CallbackInfoReturnable<ArrayList<Waypoint>> cir) {
         ArrayList<Waypoint> extra = Vega.getInstance().getVoxelmapIntegration().getExtraVoxelMapWaypoints();
-        if (extra == null) {
+        if (extra == null || extra.isEmpty()) {
             cir.setReturnValue(this.wayPts);
         } else {
             extra.addAll(this.wayPts);

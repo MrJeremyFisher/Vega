@@ -3,16 +3,12 @@ package ca.favro.vega.common.integrations.journeymap;
 import ca.favro.vega.common.Vega;
 import ca.favro.vega.common.VegaUser;
 import ca.favro.vega.common.renderers.Utils;
-import journeymap.api.client.impl.ClientAPI;
 import journeymap.api.v2.common.waypoint.Waypoint;
 import journeymap.api.v2.common.waypoint.WaypointFactory;
 import journeymap.client.waypoint.ClientWaypointImpl;
-import journeymap.common.waypoint.WaypointGroupStore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -57,17 +53,11 @@ public class JourneymapIntegration {
 
     public void clearManagedWaypoints() {
         trackedPts.clear();
-        minecraft.execute(() -> {
-            ClientAPI.INSTANCE.removeAll(Vega.MOD_ID);
-        });
     }
 
     public void sync() {
-        if (!vega.config.isShowOnMap()) return;
         trackedPts.clear();
-        if (!vega.config.isShowOnMap()) {
-            clearManagedWaypoints();
-        }
+        if (!vega.config.isShowOnMap()) return;
         String level = minecraft.level.dimension().identifier().getPath();
         String server = vega.getCurrentServerString();
         vega.getVegaWaypointManager().forEachWaypoint(vegaPlayerWaypoint -> {
@@ -118,6 +108,6 @@ public class JourneymapIntegration {
     }
 
     public ArrayList<ClientWaypointImpl> getExtraJourneymapWaypoints() {
-        return trackedPts;
+        return new ArrayList<>(trackedPts);
     }
 }

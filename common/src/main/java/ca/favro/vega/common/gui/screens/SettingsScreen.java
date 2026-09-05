@@ -16,6 +16,8 @@ import java.net.http.WebSocket;
 public class SettingsScreen extends Screen {
     private final Screen parent;
     private EditBox wssEditBox;
+    private Button connectButton;
+    private Button disconnectButton;
     private Button toggleSendButton;
     private Button toggleReceiveButton;
     private Button showOnlyFocusedButton;
@@ -49,10 +51,14 @@ public class SettingsScreen extends Screen {
         connectY = (y += 24);
         y += 24;
 
-        addRenderableWidget(Button.builder(Component.literal("Connect"), (btn) ->
-                vega.tryWSConnection()).bounds(x, y, 100, 20).build());
+        connectButton = addRenderableWidget(Button.builder(Component.literal("Connect"), (btn) -> {
+                    vega.tryWSConnection();
+                    vega.wsConnectionDelay = 1000;
+                }
+        ).bounds(x, y, 100, 20).build());
 
-        addRenderableWidget(Button.builder(Component.literal("Disconnect"), (btn) -> {
+        disconnectButton = addRenderableWidget(Button.builder(Component.literal("Disconnect"), (btn) -> {
+            vega.wsConnectionDelay = -1;
             if (vega.getWebSocket() != null) {
                 vega.getWebSocket().sendClose(WebSocket.NORMAL_CLOSURE, "User disconnect");
             }
@@ -148,10 +154,14 @@ public class SettingsScreen extends Screen {
         guiGraphics.drawString(this.font, "Websocket address:", this.width / 2 - 100 - 100, connectY - 24 + 6, Color.WHITE.getRGB());
 
         Component connection;
-        if (vega.getWebSocket() != null && !vega.getWebSocket().isInputClosed()) {
+        if (vega.getWebSocket() != null && !vega.getWebSocket().isOutputClosed()) {
             connection = Component.literal("Connected").withColor(Color.GREEN.getRGB());
+            connectButton.active = false;
+            disconnectButton.active = true;
         } else {
             connection = Component.literal("Disconnected").withColor(Color.RED.getRGB());
+            connectButton.active = true;
+            disconnectButton.active = false;
         }
 
         guiGraphics.drawCenteredString(this.font, connection, this.width / 2, connectY, Color.LIGHT_GRAY.getRGB());

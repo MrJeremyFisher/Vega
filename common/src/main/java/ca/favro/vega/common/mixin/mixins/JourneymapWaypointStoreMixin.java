@@ -1,6 +1,7 @@
 package ca.favro.vega.common.mixin.mixins;
 
 import ca.favro.vega.common.Vega;
+import ca.favro.vega.common.integrations.journeymap.JourneymapIntegration;
 import journeymap.client.waypoint.ClientWaypointImpl;
 import journeymap.common.waypoint.WaypointStore;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,6 +16,7 @@ import java.util.Collection;
         remap = false
 )
 public class JourneymapWaypointStoreMixin {
+
     @Inject(
             method = "getAll()Ljava/util/Collection;",
             at = {@At("RETURN")},
@@ -22,10 +24,10 @@ public class JourneymapWaypointStoreMixin {
             remap = false
     )
     private void vega$addWaypoints(CallbackInfoReturnable<Collection<ClientWaypointImpl>> cir) {
-        Collection<ClientWaypointImpl> extra = Vega.getInstance().getJourneymapIntegration().getExtraJourneymapWaypoints();
-        if (extra == null) {
-            cir.setReturnValue(cir.getReturnValue());
-        } else {
+        JourneymapIntegration integration = Vega.getInstance().getJourneymapIntegration();
+        if (integration == null) return;
+        Collection<ClientWaypointImpl> extra = integration.getExtraJourneymapWaypoints();
+        if (extra != null && !extra.isEmpty()) {
             extra.addAll(cir.getReturnValue());
             cir.setReturnValue(extra);
         }

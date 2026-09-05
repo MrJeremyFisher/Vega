@@ -47,8 +47,7 @@ public class PlayerLocationBarRenderer implements ContextualBarRenderer {
         int i = this.top(this.minecraft.getWindow());
         Entity entity = this.minecraft.getCameraEntity();
         if (entity != null) {
-            Level level = entity.level();
-            vega.getVegaWaypointManager().forEachWaypoint(
+            vega.getVegaWaypointManager().forEachWaypointSorted(
                     (trackedWaypoint) -> {
                         if (!trackedWaypoint.id().equals(entity.getUUID()) // Don't render own waypoint
                                 && (((Instant.now().toEpochMilli() - trackedWaypoint.getDateAdded()) / (3.6 * Math.pow(10, 6))) < vega.config.getWaypointKeepAge())

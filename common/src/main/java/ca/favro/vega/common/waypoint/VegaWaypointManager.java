@@ -1,6 +1,10 @@
 package ca.favro.vega.common.waypoint;
 
 import ca.favro.vega.common.Vega;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.vehicle.minecart.Minecart;
+import net.minecraft.world.waypoints.TrackedWaypoint;
 import org.slf4j.Logger;
 
 import java.util.Comparator;
@@ -54,5 +58,14 @@ public class VegaWaypointManager {
 
     public void forEachWaypoint(Consumer<VegaPlayerWaypoint> action, Predicate<VegaPlayerWaypoint> filter) {
         this.waypoints.values().stream().filter(filter).forEach(action);
+    }
+
+    public void forEachWaypointSorted(Consumer<VegaPlayerWaypoint> action, Predicate<VegaPlayerWaypoint> filter) {
+        Entity entity = Minecraft.getInstance().getCameraEntity();
+        this.waypoints
+                .values()
+                .stream()
+                .sorted(Comparator.<VegaPlayerWaypoint>comparingDouble(wp -> wp.distanceSquared(entity)).reversed())
+                .filter(filter).forEach(action);
     }
 }

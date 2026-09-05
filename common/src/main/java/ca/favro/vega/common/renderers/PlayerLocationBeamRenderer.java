@@ -129,7 +129,7 @@ public class PlayerLocationBeamRenderer {
         double z = waypoint.position().z - cPos.z - 0.5;
         float distance = (float) Mth.length(x, y, z);
         // TODO make setting
-        if (distance <= 0 || distance > (Minecraft.getInstance().options.getEffectiveRenderDistance() * 16 * 4) - 2) {
+        if (distance <= 3 || distance > (Minecraft.getInstance().options.getEffectiveRenderDistance() * 16 * 4) - 2) {
             return;
         }
         float spentTime = minecraft.getCameraEntity().tickCount + minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(true);

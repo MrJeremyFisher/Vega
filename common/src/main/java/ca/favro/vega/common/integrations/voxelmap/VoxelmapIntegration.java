@@ -89,6 +89,7 @@ public class VoxelmapIntegration {
                             case LOCAL -> "person";
                             case REMOTE -> "world";
                             case SNITCH -> "camera";
+                            case USER -> "heart";
                             case null -> "point";
                         },
                         vegaPlayerWaypoint.getWorld(),

@@ -21,6 +21,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 
+import java.awt.Color;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -210,14 +211,21 @@ public class VegaPlayerScreen extends Screen {
         super.render(guiGraphics, i, j, f);
         this.updateServerLabel(this.minecraft);
         if (this.serverLabel != null) {
-            guiGraphics.drawString(this.minecraft.font, this.serverLabel, this.marginX() + 8, 35, -1);
+            guiGraphics.drawString(this.font, this.serverLabel, this.marginX() + 8, 35, -1);
         }
 
         if (!this.socialInteractionsPlayerList.isEmpty()) {
             this.socialInteractionsPlayerList.render(guiGraphics, i, j, f);
         } else if (!this.searchBox.getValue().isEmpty()) {
-            guiGraphics.drawCenteredString(this.minecraft.font, EMPTY_SEARCH, this.width / 2, (72 + this.listEnd()) / 2, -1);
+            guiGraphics.drawCenteredString(this.font, EMPTY_SEARCH, this.width / 2, (72 + this.listEnd()) / 2, -1);
         }
+
+        int k = 12;
+        if (Vega.getInstance().getPermissionLevel(this.minecraft.player.getUUID()) == 2) {
+            guiGraphics.drawCenteredString(this.font, "Ctrl+Click - authorize user", this.width / 2, listEnd() + k, Color.LIGHT_GRAY.getRGB());
+            k += 12;
+        }
+        guiGraphics.drawCenteredString(this.font, "Shift+Click - focus user", this.width / 2, listEnd() + k, Color.LIGHT_GRAY.getRGB());
     }
 
     @Override

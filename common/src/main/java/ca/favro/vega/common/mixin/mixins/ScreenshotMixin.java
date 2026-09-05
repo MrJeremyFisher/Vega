@@ -1,6 +1,5 @@
 package ca.favro.vega.common.mixin.mixins;
 
-import ca.favro.vega.client.VegaFabric;
 import ca.favro.vega.common.Vega;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.Screenshot;
@@ -18,12 +17,14 @@ import java.util.function.Consumer;
 public class ScreenshotMixin {
     @Inject(
             method = {"grab(Ljava/io/File;Ljava/lang/String;Lcom/mojang/blaze3d/pipeline/RenderTarget;ILjava/util/function/Consumer;)V"},
-            at = {@At("HEAD")}
+            at = {@At("HEAD")},
+            cancellable = true
     )
-    private static void vega$saveScreenshot(File file, @Nullable String string, RenderTarget renderTarget, int i, Consumer<Component> consumer, CallbackInfo ci) {
+    private static void vega$saveScreenshot(File file, @Nullable String filename, RenderTarget renderTarget, int i, Consumer<Component> consumer, CallbackInfo ci) {
         try {
             if (Vega.getInstance() != null) {
-                Vega.getInstance().handleScreenshot(file, renderTarget, consumer);
+                Vega.getInstance().handleScreenshot1(file, filename, renderTarget, consumer);
+                ci.cancel();
             }
         } catch (Throwable e) {
             Vega.getInstance().LOGGER.error("Error in Vega screenshot handling", e);

@@ -22,6 +22,7 @@ public record VegaPlayer(String name, UUID uuid, Vec3 position, String world, St
             obj.addProperty("time", src.time);
             obj.addProperty("name", src.name);
             obj.addProperty("uuid", String.valueOf(src.uuid));
+            obj.addProperty("source", src.source.toString().toUpperCase());
             JsonObject position = new JsonObject();
             position.addProperty("x", src.position.x);
             position.addProperty("y", src.position.y);
@@ -39,6 +40,7 @@ public record VegaPlayer(String name, UUID uuid, Vec3 position, String world, St
         public VegaPlayer deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
             String name = json.getAsJsonObject().get("name").getAsString();
             UUID uuid = UUID.fromString(json.getAsJsonObject().get("uuid").getAsString());
+            JsonElement source = json.getAsJsonObject().get("source");
 
             JsonObject positionObject = json.getAsJsonObject().get("position").getAsJsonObject();
             Vec3 position = new Vec3(
@@ -51,7 +53,13 @@ public record VegaPlayer(String name, UUID uuid, Vec3 position, String world, St
             long time = json.getAsJsonObject().get("time").getAsLong();
 
             // Only time deserialized is when coming from remote
-            return new VegaPlayer(name, uuid, position, world, server, time, Source.REMOTE);
+            Source source1;
+            try {
+                source1 = (source == null ? Source.REMOTE : Source.valueOf(source.getAsString().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                source1 = Source.REMOTE;
+            }
+            return new VegaPlayer(name, uuid, position, world, server, time, source1);
         }
     }
 
@@ -59,6 +67,7 @@ public record VegaPlayer(String name, UUID uuid, Vec3 position, String world, St
         LOCAL, // Waypoint comes from an entity in view distance. Should not be shared unless the waypoint is for the local player
         SNITCH, // Waypoint comes from a snitch hit
         REMOTE, // Waypoint comes from remote server
+        USER // Waypoint comes from someone using the mod
     }
 }
 
